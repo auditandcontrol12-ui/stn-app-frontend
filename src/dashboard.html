@@ -13,25 +13,12 @@
         <span class="hero-badge">Access Control</span>
         <h1>Dashboard</h1>
         <div class="page-subtitle">
-          Load user access, select business area, and launch the required STN action.
+          Signed-in user details and allowed business areas.
         </div>
       </div>
     </div>
 
     <div class="page-shell">
-      <div class="card">
-        <div class="section-title">User Access Lookup</div>
-        <div class="form-grid-1">
-          <div class="field-block">
-            <label for="emailInput">Test User Email</label>
-            <input id="emailInput" type="text" placeholder="Enter email from app.STNUserAccess" />
-          </div>
-        </div>
-        <div class="action-row" style="margin-top: 12px;">
-          <button id="loadUserBtn">Load User Access</button>
-        </div>
-      </div>
-
       <div class="card">
         <div class="section-title">User Summary</div>
         <div class="summary-grid">
@@ -52,18 +39,6 @@
             <div class="value" id="holdingName"></div>
           </div>
           <div class="summary-item">
-            <div class="label">Manufacturing</div>
-            <div class="value" id="allowManu"></div>
-          </div>
-          <div class="summary-item">
-            <div class="label">Distribution</div>
-            <div class="value" id="allowDist"></div>
-          </div>
-          <div class="summary-item">
-            <div class="label">Active</div>
-            <div class="value" id="isActive"></div>
-          </div>
-          <div class="summary-item">
             <div class="label">Selected Area</div>
             <div class="value" id="selectedArea">None</div>
           </div>
@@ -72,10 +47,7 @@
 
       <div class="card">
         <div class="section-title">Business Area</div>
-        <div class="header-strip">
-          <button id="selectManuBtn">Manufacturing</button>
-          <button id="selectDistBtn">Distribution</button>
-        </div>
+        <div class="header-strip" id="businessAreaButtons"></div>
       </div>
 
       <div class="card soft">
@@ -84,12 +56,12 @@
           <button id="postInboundBtn">Post Inbound</button>
           <button id="postOutboundBtn">Post Outbound</button>
           <button id="checkSTNBtn" class="success">Check STN</button>
-          <button id="backBtn" class="secondary">Back</button>
+          <button id="logoutBtn" class="secondary">Logout</button>
         </div>
       </div>
 
       <div class="card output-card">
-        <pre id="output">Waiting...</pre>
+        <pre id="output">Loading user access...</pre>
       </div>
     </div>
   </div>

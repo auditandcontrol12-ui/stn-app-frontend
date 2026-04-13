@@ -1,5 +1,5 @@
 document.getElementById("loginBtn").addEventListener("click", () => {
-  alert("Microsoft Login will be connected in next step.");
+  window.location.href = "/login";
 });
 
 document.getElementById("dashboardBtn").addEventListener("click", () => {

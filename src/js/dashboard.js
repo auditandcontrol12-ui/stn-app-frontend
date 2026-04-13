@@ -9,26 +9,50 @@ function refreshSelectedArea() {
   setText("selectedArea", selectedArea || "None");
 }
 
-function clearSelectedArea() {
-  selectedArea = "";
-  localStorage.removeItem("selectedArea");
-  refreshSelectedArea();
-}
-
 function saveSelectedArea(area) {
   selectedArea = area;
   localStorage.setItem("selectedArea", area);
   refreshSelectedArea();
 }
 
-function canUseSelectedArea() {
-  if (!currentUser) {
-    alert("Load user access first.");
-    return false;
+function clearSelectedArea() {
+  selectedArea = "";
+  localStorage.removeItem("selectedArea");
+  refreshSelectedArea();
+}
+
+function saveCurrentUser() {
+  if (currentUser) {
+    localStorage.setItem("stnCurrentUser", JSON.stringify(currentUser));
+  } else {
+    localStorage.removeItem("stnCurrentUser");
+  }
+}
+
+function renderBusinessAreaButtons() {
+  const container = document.getElementById("businessAreaButtons");
+  container.innerHTML = "";
+
+  if (!currentUser) return;
+
+  if (currentUser.IsAllowedManufacturing) {
+    const btn = document.createElement("button");
+    btn.textContent = "Manufacturing";
+    btn.addEventListener("click", () => saveSelectedArea("Manufacturing"));
+    container.appendChild(btn);
   }
 
-  if (!currentUser.IsActive) {
-    alert("This user is inactive.");
+  if (currentUser.IsAllowedDistribution) {
+    const btn = document.createElement("button");
+    btn.textContent = "Distribution";
+    btn.addEventListener("click", () => saveSelectedArea("Distribution"));
+    container.appendChild(btn);
+  }
+}
+
+function canUseSelectedArea() {
+  if (!currentUser) {
+    alert("User is not loaded.");
     return false;
   }
 
@@ -50,39 +74,13 @@ function canUseSelectedArea() {
   return true;
 }
 
-function saveCurrentUser() {
-  if (currentUser) {
-    localStorage.setItem("stnCurrentUser", JSON.stringify(currentUser));
-  } else {
-    localStorage.removeItem("stnCurrentUser");
-  }
-}
-
-document.getElementById("loadUserBtn").addEventListener("click", async () => {
-  const email = document.getElementById("emailInput").value.trim();
+async function loadUserAccess() {
   const output = document.getElementById("output");
-
-  clearSelectedArea();
-  currentUser = null;
-  saveCurrentUser();
-
-  setText("userName", "");
-  setText("userEmail", "");
-  setText("userRole", "");
-  setText("holdingName", "");
-  setText("allowManu", "");
-  setText("allowDist", "");
-  setText("isActive", "");
-
-  if (!email) {
-    output.textContent = "Please enter an email.";
-    return;
-  }
 
   try {
     output.textContent = "Loading user access...";
 
-    const res = await fetch(`/api/getUserAccess?email=${encodeURIComponent(email)}`);
+    const res = await fetch("/api/getUserAccess");
     const text = await res.text();
 
     let data;
@@ -96,62 +94,40 @@ document.getElementById("loadUserBtn").addEventListener("click", async () => {
     output.textContent = JSON.stringify(data, null, 2);
 
     if (!data.success) {
+      localStorage.removeItem("stnCurrentUser");
+      localStorage.removeItem("selectedArea");
+      window.location.href = "/no-access.html";
       return;
     }
 
-    const row = data.data;
-    currentUser = row;
+    currentUser = data.data;
     saveCurrentUser();
 
-    setText("userName", row.UserName);
-    setText("userEmail", row.UserEmail);
-    setText("userRole", row.UserRole);
-    setText("holdingName", row.HoldingName);
-    setText("allowManu", row.IsAllowedManufacturing ? "Yes" : "No");
-    setText("allowDist", row.IsAllowedDistribution ? "Yes" : "No");
-    setText("isActive", row.IsActive ? "Yes" : "No");
+    setText("userName", currentUser.UserName);
+    setText("userEmail", currentUser.UserEmail);
+    setText("userRole", currentUser.UserRole);
+    setText("holdingName", currentUser.HoldingName);
+
+    if (
+      selectedArea === "Manufacturing" &&
+      !currentUser.IsAllowedManufacturing
+    ) {
+      clearSelectedArea();
+    }
+
+    if (
+      selectedArea === "Distribution" &&
+      !currentUser.IsAllowedDistribution
+    ) {
+      clearSelectedArea();
+    }
+
+    renderBusinessAreaButtons();
+    refreshSelectedArea();
   } catch (err) {
     output.textContent = `Error: ${err.message}`;
   }
-});
-
-document.getElementById("selectManuBtn").addEventListener("click", () => {
-  if (!currentUser) {
-    alert("Load user access first.");
-    return;
-  }
-
-  if (!currentUser.IsActive) {
-    alert("This user is inactive.");
-    return;
-  }
-
-  if (!currentUser.IsAllowedManufacturing) {
-    alert("This user is not allowed for Manufacturing.");
-    return;
-  }
-
-  saveSelectedArea("Manufacturing");
-});
-
-document.getElementById("selectDistBtn").addEventListener("click", () => {
-  if (!currentUser) {
-    alert("Load user access first.");
-    return;
-  }
-
-  if (!currentUser.IsActive) {
-    alert("This user is inactive.");
-    return;
-  }
-
-  if (!currentUser.IsAllowedDistribution) {
-    alert("This user is not allowed for Distribution.");
-    return;
-  }
-
-  saveSelectedArea("Distribution");
-});
+}
 
 document.getElementById("postInboundBtn").addEventListener("click", () => {
   if (!canUseSelectedArea()) return;
@@ -168,8 +144,9 @@ document.getElementById("checkSTNBtn").addEventListener("click", () => {
   alert(`Check STN for ${selectedArea} will be built later.`);
 });
 
-document.getElementById("backBtn").addEventListener("click", () => {
-  window.location.href = "/";
+document.getElementById("logoutBtn").addEventListener("click", () => {
+  window.location.href = "/logout";
 });
 
 refreshSelectedArea();
+loadUserAccess();

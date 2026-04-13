@@ -1,19 +1,42 @@
 const { app } = require("@azure/functions");
 const { getPool, sql } = require("../shared/db");
 
+function getClientPrincipal(request) {
+  const header = request.headers.get("x-ms-client-principal");
+  if (!header) return null;
+
+  try {
+    return JSON.parse(Buffer.from(header, "base64").toString("utf8"));
+  } catch {
+    return null;
+  }
+}
+
+function getUserEmail(principal) {
+  if (!principal) return null;
+
+  const claims = principal.claims || [];
+  const emailClaim =
+    claims.find(c => c.typ === "preferred_username") ||
+    claims.find(c => c.typ === "email");
+
+  return emailClaim?.val || principal.userDetails || null;
+}
+
 app.http("getUserAccess", {
   methods: ["GET"],
   authLevel: "anonymous",
   handler: async (request) => {
     try {
-      const userEmail = request.query.get("email");
+      const principal = getClientPrincipal(request);
+      const userEmail = getUserEmail(principal);
 
       if (!userEmail) {
         return {
-          status: 400,
+          status: 401,
           jsonBody: {
             success: false,
-            message: "Email is required"
+            message: "User is not authenticated."
           }
         };
       }
@@ -37,10 +60,23 @@ app.http("getUserAccess", {
 
       if (result.recordset.length === 0) {
         return {
-          status: 404,
+          status: 403,
           jsonBody: {
             success: false,
-            message: "User not found",
+            message: "User is not allowed.",
+            userEmail
+          }
+        };
+      }
+
+      const row = result.recordset[0];
+
+      if (!row.IsActive) {
+        return {
+          status: 403,
+          jsonBody: {
+            success: false,
+            message: "User is inactive.",
             userEmail
           }
         };
@@ -50,7 +86,7 @@ app.http("getUserAccess", {
         status: 200,
         jsonBody: {
           success: true,
-          data: result.recordset[0]
+          data: row
         }
       };
     } catch (error) {
