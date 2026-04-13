@@ -1,8 +1,9 @@
 {
   "name": "stn-api",
   "version": "1.0.0",
-  "main": "getMe/*.js",
+  "main": "{getMe,getUserAccess}/index.js",
   "dependencies": {
-    "@azure/functions": "^4.5.0"
+    "@azure/functions": "^4.5.0",
+    "mssql": "^11.0.1"
   }
 }

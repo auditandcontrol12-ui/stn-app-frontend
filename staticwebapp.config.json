@@ -1,10 +1,6 @@
 {
   "routes": [
     {
-      "route": "/dashboard.html",
-      "allowedRoles": ["authenticated"]
-    },
-    {
       "route": "/login",
       "rewrite": "/.auth/login/aad"
     },

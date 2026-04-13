@@ -11,10 +11,26 @@
     <h1>Dashboard</h1>
 
     <div class="card">
-      <p><strong>User Name:</strong> Test User</p>
-      <p><strong>Email:</strong> test@company.com</p>
-      <p><strong>Role:</strong> Supervisor</p>
-      <p><strong>Business Area:</strong> Distribution / Manufacturing</p>
+      <label for="emailInput"><strong>Test User Email</strong></label><br /><br />
+      <input id="emailInput" type="text" style="width: 350px; padding: 8px;" placeholder="Enter email from app.STNUserAccess" />
+      <button id="loadUserBtn">Load User Access</button>
+    </div>
+
+    <div class="card">
+      <p><strong>User Name:</strong> <span id="userName"></span></p>
+      <p><strong>Email:</strong> <span id="userEmail"></span></p>
+      <p><strong>Role:</strong> <span id="userRole"></span></p>
+      <p><strong>Holding:</strong> <span id="holdingName"></span></p>
+      <p><strong>Manufacturing:</strong> <span id="allowManu"></span></p>
+      <p><strong>Distribution:</strong> <span id="allowDist"></span></p>
+      <p><strong>Active:</strong> <span id="isActive"></span></p>
+    </div>
+
+    <div class="card">
+      <p><strong>Select Business Area</strong></p>
+      <button id="selectManuBtn">Manufacturing</button>
+      <button id="selectDistBtn">Distribution</button>
+      <p><strong>Selected Area:</strong> <span id="selectedArea">None</span></p>
     </div>
 
     <div class="card">
@@ -22,6 +38,10 @@
       <button id="postOutboundBtn">Post Outbound</button>
       <button id="checkSTNBtn">Check STN</button>
       <button id="backBtn">Back</button>
+    </div>
+
+    <div class="card">
+      <pre id="output">Waiting...</pre>
     </div>
   </div>
 

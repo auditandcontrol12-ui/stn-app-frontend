@@ -1,7 +1,7 @@
 node_modules/
 api/node_modules/
 .env
-.vscode/
+
 dist/
 build/
 .local/

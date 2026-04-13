@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>STN Entry</title>
+  <link rel="stylesheet" href="/css/app.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>STN Entry</h1>
+
+    <div class="card">
+      <p><strong>Transaction Type:</strong> <span id="txnType"></span></p>
+      <p><strong>Business Area:</strong> <span id="businessArea"></span></p>
+      <p>This is the placeholder page for entry form.</p>
+    </div>
+
+    <div class="card">
+      <button id="backDashboardBtn">Back to Dashboard</button>
+    </div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    document.getElementById("txnType").textContent = params.get("type") || "";
+    document.getElementById("businessArea").textContent = params.get("area") || "";
+    document.getElementById("backDashboardBtn").addEventListener("click", () => {
+      window.location.href = "/dashboard.html";
+    });
+  </script>
+</body>
+</html>

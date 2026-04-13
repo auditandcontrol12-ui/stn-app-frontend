@@ -5,6 +5,6 @@
     "@azure/static-web-apps-cli": "^2.0.2"
   },
   "scripts": {
-    "start": "swa start ./src"
+    "start": "npx @azure/static-web-apps-cli start ./src --api-location http://localhost:7071"
   }
 }
