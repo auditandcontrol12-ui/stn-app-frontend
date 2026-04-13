@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>STN Preview</title>
+  <link rel="stylesheet" href="/css/app.css" />
+</head>
+<body>
+  <div class="container">
+    <div class="top-hero">
+      <div>
+        <span class="hero-badge">Document Preview</span>
+        <h1>STN Preview</h1>
+        <div class="page-subtitle">
+          Review the STN before final submit.
+        </div>
+      </div>
+    </div>
+
+    <div class="page-shell">
+      <div class="card">
+        <div class="section-title">Document Summary</div>
+        <div class="summary-grid">
+          <div class="summary-item">
+            <div class="label">STN Type</div>
+            <div class="value" id="pvStnType"></div>
+          </div>
+          <div class="summary-item">
+            <div class="label">Business Area</div>
+            <div class="value" id="pvBusinessArea"></div>
+          </div>
+          <div class="summary-item">
+            <div class="label">STN Date</div>
+            <div class="value" id="pvStnDate"></div>
+          </div>
+          <div class="summary-item">
+            <div class="label">Status</div>
+            <div class="value" id="pvStatus"></div>
+          </div>
+          <div class="summary-item">
+            <div class="label">Warehouse From</div>
+            <div class="value" id="pvWarehouseFrom"></div>
+          </div>
+          <div class="summary-item">
+            <div class="label">Warehouse To</div>
+            <div class="value" id="pvWarehouseTo"></div>
+          </div>
+          <div class="summary-item">
+            <div class="label">Created By</div>
+            <div class="value" id="pvCreatedBy"></div>
+          </div>
+          <div class="summary-item">
+            <div class="label">User Email</div>
+            <div class="value" id="pvCreatedByEmail"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">Remarks</div>
+        <div id="pvRemarks" class="info-banner"></div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">Line Preview</div>
+        <div class="lines-table-wrap">
+          <table class="lines-table">
+            <thead>
+              <tr>
+                <th class="col-line">Line</th>
+                <th>Item Code</th>
+                <th>Item Name</th>
+                <th>UOM</th>
+                <th>Batch Number</th>
+                <th>Qty</th>
+                <th>Line Remarks</th>
+              </tr>
+            </thead>
+            <tbody id="previewLinesContainer"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card soft">
+        <div class="action-row">
+          <button id="backEntryBtn" class="secondary">Back to Entry</button>
+          <button id="submitPreviewBtn" class="success">Submit</button>
+        </div>
+      </div>
+
+      <div class="card output-card">
+        <pre id="previewOutput">Waiting...</pre>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/stn-preview.js"></script>
+</body>
+</html>

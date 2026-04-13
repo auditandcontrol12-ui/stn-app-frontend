@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>STN Success</title>
+  <link rel="stylesheet" href="/css/app.css" />
+</head>
+<body>
+  <div class="container">
+    <div class="top-hero">
+      <div>
+        <span class="hero-badge">Submission Complete</span>
+        <h1>STN Submitted Successfully</h1>
+        <div class="page-subtitle">
+          The stock transfer note has been saved to the database.
+        </div>
+      </div>
+    </div>
+
+    <div class="page-shell">
+      <div class="card">
+        <div class="section-title">Submission Result</div>
+        <div class="summary-grid">
+          <div class="summary-item">
+            <div class="label">STN Number</div>
+            <div class="value" id="scStnNumber"></div>
+          </div>
+          <div class="summary-item">
+            <div class="label">STN ID</div>
+            <div class="value" id="scStnId"></div>
+          </div>
+          <div class="summary-item">
+            <div class="label">STN Type</div>
+            <div class="value" id="scStnType"></div>
+          </div>
+          <div class="summary-item">
+            <div class="label">Status</div>
+            <div class="value" id="scStatus"></div>
+          </div>
+          <div class="summary-item">
+            <div class="label">Warehouse From</div>
+            <div class="value" id="scWarehouseFrom"></div>
+          </div>
+          <div class="summary-item">
+            <div class="label">Warehouse To</div>
+            <div class="value" id="scWarehouseTo"></div>
+          </div>
+          <div class="summary-item">
+            <div class="label">Created By</div>
+            <div class="value" id="scCreatedBy"></div>
+          </div>
+          <div class="summary-item">
+            <div class="label">Submitted At</div>
+            <div class="value" id="scSubmittedAt"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">Line Details</div>
+        <div class="lines-table-wrap">
+          <table class="lines-table">
+            <thead>
+              <tr>
+                <th class="col-line">Line</th>
+                <th>Item Code</th>
+                <th>Item Name</th>
+                <th>UOM</th>
+                <th>Batch Number</th>
+                <th>Qty</th>
+                <th>Line Remarks</th>
+              </tr>
+            </thead>
+            <tbody id="successLinesContainer"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card soft">
+        <div class="action-row">
+          <button id="printBtn" class="success">Print / Save PDF</button>
+          <button id="newEntryBtn">New Entry</button>
+          <button id="goDashboardBtn" class="secondary">Dashboard</button>
+        </div>
+      </div>
+
+      <div class="card output-card">
+        <pre id="successOutput">Loading submitted STN...</pre>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/stn-success.js"></script>
+</body>
+</html>

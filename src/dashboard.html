@@ -8,40 +8,89 @@
 </head>
 <body>
   <div class="container">
-    <h1>Dashboard</h1>
-
-    <div class="card">
-      <label for="emailInput"><strong>Test User Email</strong></label><br /><br />
-      <input id="emailInput" type="text" style="width: 350px; padding: 8px;" placeholder="Enter email from app.STNUserAccess" />
-      <button id="loadUserBtn">Load User Access</button>
+    <div class="top-hero">
+      <div>
+        <span class="hero-badge">Access Control</span>
+        <h1>Dashboard</h1>
+        <div class="page-subtitle">
+          Load user access, select business area, and launch the required STN action.
+        </div>
+      </div>
     </div>
 
-    <div class="card">
-      <p><strong>User Name:</strong> <span id="userName"></span></p>
-      <p><strong>Email:</strong> <span id="userEmail"></span></p>
-      <p><strong>Role:</strong> <span id="userRole"></span></p>
-      <p><strong>Holding:</strong> <span id="holdingName"></span></p>
-      <p><strong>Manufacturing:</strong> <span id="allowManu"></span></p>
-      <p><strong>Distribution:</strong> <span id="allowDist"></span></p>
-      <p><strong>Active:</strong> <span id="isActive"></span></p>
-    </div>
+    <div class="page-shell">
+      <div class="card">
+        <div class="section-title">User Access Lookup</div>
+        <div class="form-grid-1">
+          <div class="field-block">
+            <label for="emailInput">Test User Email</label>
+            <input id="emailInput" type="text" placeholder="Enter email from app.STNUserAccess" />
+          </div>
+        </div>
+        <div class="action-row" style="margin-top: 12px;">
+          <button id="loadUserBtn">Load User Access</button>
+        </div>
+      </div>
 
-    <div class="card">
-      <p><strong>Select Business Area</strong></p>
-      <button id="selectManuBtn">Manufacturing</button>
-      <button id="selectDistBtn">Distribution</button>
-      <p><strong>Selected Area:</strong> <span id="selectedArea">None</span></p>
-    </div>
+      <div class="card">
+        <div class="section-title">User Summary</div>
+        <div class="summary-grid">
+          <div class="summary-item">
+            <div class="label">User Name</div>
+            <div class="value" id="userName"></div>
+          </div>
+          <div class="summary-item">
+            <div class="label">Email</div>
+            <div class="value" id="userEmail"></div>
+          </div>
+          <div class="summary-item">
+            <div class="label">Role</div>
+            <div class="value" id="userRole"></div>
+          </div>
+          <div class="summary-item">
+            <div class="label">Holding</div>
+            <div class="value" id="holdingName"></div>
+          </div>
+          <div class="summary-item">
+            <div class="label">Manufacturing</div>
+            <div class="value" id="allowManu"></div>
+          </div>
+          <div class="summary-item">
+            <div class="label">Distribution</div>
+            <div class="value" id="allowDist"></div>
+          </div>
+          <div class="summary-item">
+            <div class="label">Active</div>
+            <div class="value" id="isActive"></div>
+          </div>
+          <div class="summary-item">
+            <div class="label">Selected Area</div>
+            <div class="value" id="selectedArea">None</div>
+          </div>
+        </div>
+      </div>
 
-    <div class="card">
-      <button id="postInboundBtn">Post Inbound</button>
-      <button id="postOutboundBtn">Post Outbound</button>
-      <button id="checkSTNBtn">Check STN</button>
-      <button id="backBtn">Back</button>
-    </div>
+      <div class="card">
+        <div class="section-title">Business Area</div>
+        <div class="header-strip">
+          <button id="selectManuBtn">Manufacturing</button>
+          <button id="selectDistBtn">Distribution</button>
+        </div>
+      </div>
 
-    <div class="card">
-      <pre id="output">Waiting...</pre>
+      <div class="card soft">
+        <div class="section-title">Available Actions</div>
+        <div class="action-row">
+          <button id="postInboundBtn">Post Inbound</button>
+          <button id="postOutboundBtn">Post Outbound</button>
+          <button id="checkSTNBtn" class="success">Check STN</button>
+          <button id="backBtn" class="secondary">Back</button>
+        </div>
+      </div>
+
+      <div class="card output-card">
+        <pre id="output">Waiting...</pre>
+      </div>
     </div>
   </div>
 

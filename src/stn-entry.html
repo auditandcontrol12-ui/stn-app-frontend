@@ -8,26 +8,111 @@
 </head>
 <body>
   <div class="container">
-    <h1>STN Entry</h1>
-
-    <div class="card">
-      <p><strong>Transaction Type:</strong> <span id="txnType"></span></p>
-      <p><strong>Business Area:</strong> <span id="businessArea"></span></p>
-      <p>This is the placeholder page for entry form.</p>
+    <div class="top-hero">
+      <div>
+        <span class="hero-badge">STN Operations</span>
+        <h1>STN Entry</h1>
+        <div class="page-subtitle">Create your draft stock transfer note with aligned headers and structured lines.</div>
+      </div>
     </div>
 
-    <div class="card">
-      <button id="backDashboardBtn">Back to Dashboard</button>
+    <div class="page-shell">
+      <div class="card">
+        <div class="section-title">Document Summary</div>
+        <div class="summary-grid">
+          <div class="summary-item">
+            <div class="label">Transaction Type</div>
+            <div class="value" id="txnType"></div>
+          </div>
+          <div class="summary-item">
+            <div class="label">Business Area</div>
+            <div class="value" id="businessArea"></div>
+          </div>
+          <div class="summary-item">
+            <div class="label">STN Date</div>
+            <div class="value" id="stnDateText"></div>
+          </div>
+          <div class="summary-item">
+            <div class="label">Status</div>
+            <div class="value">Draft</div>
+          </div>
+          <div class="summary-item">
+            <div class="label">Created By</div>
+            <div class="value" id="createdBy"></div>
+          </div>
+          <div class="summary-item">
+            <div class="label">User Email</div>
+            <div class="value" id="createdByEmail"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">Header Details</div>
+
+        <div class="form-grid">
+          <div class="field-block">
+            <label for="warehouseFrom">Warehouse From</label>
+            <select id="warehouseFrom"></select>
+            <input id="warehouseFromCustom" type="text" placeholder="Enter custom Warehouse From" style="display:none;" />
+          </div>
+
+          <div class="field-block">
+            <label for="warehouseTo">Warehouse To</label>
+            <select id="warehouseTo"></select>
+            <input id="warehouseToCustom" type="text" placeholder="Enter custom Warehouse To" style="display:none;" />
+          </div>
+        </div>
+
+        <div class="form-grid-1" style="margin-top: 18px;">
+          <div class="field-block">
+            <label for="remarks">Remarks</label>
+            <textarea id="remarks" rows="3"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="line-toolbar">
+          <div>
+            <div class="section-title" style="margin-bottom: 4px;">Line Items</div>
+            <p>Add item rows, batch numbers, quantities, and remarks.</p>
+          </div>
+          <button id="addLineBtn" class="success">Add Line</button>
+        </div>
+
+        <div class="lines-table-wrap">
+          <table class="lines-table">
+            <thead>
+              <tr>
+                <th class="col-line">Line</th>
+                <th>Item</th>
+                <th>Item Name</th>
+                <th>UOM</th>
+                <th>Batch Number</th>
+                <th>Qty</th>
+                <th>Line Remarks</th>
+                <th class="col-actions">Action</th>
+              </tr>
+            </thead>
+            <tbody id="linesContainer"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card soft">
+        <div class="action-row">
+          <button id="previewBtn">Preview</button>
+          <button id="backDashboardBtn" class="secondary">Back to Dashboard</button>
+        </div>
+      </div>
+
+      <div class="card output-card">
+        <pre id="output">Loading lookups...</pre>
+      </div>
     </div>
   </div>
 
-  <script>
-    const params = new URLSearchParams(window.location.search);
-    document.getElementById("txnType").textContent = params.get("type") || "";
-    document.getElementById("businessArea").textContent = params.get("area") || "";
-    document.getElementById("backDashboardBtn").addEventListener("click", () => {
-      window.location.href = "/dashboard.html";
-    });
-  </script>
+  <script src="/js/stn-entry.js"></script>
 </body>
 </html>

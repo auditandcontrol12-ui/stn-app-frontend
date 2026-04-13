@@ -37,23 +37,25 @@ function canUseSelectedArea() {
     return false;
   }
 
-  if (
-    selectedArea === "Manufacturing" &&
-    !currentUser.IsAllowedManufacturing
-  ) {
+  if (selectedArea === "Manufacturing" && !currentUser.IsAllowedManufacturing) {
     alert("This user is not allowed for Manufacturing.");
     return false;
   }
 
-  if (
-    selectedArea === "Distribution" &&
-    !currentUser.IsAllowedDistribution
-  ) {
+  if (selectedArea === "Distribution" && !currentUser.IsAllowedDistribution) {
     alert("This user is not allowed for Distribution.");
     return false;
   }
 
   return true;
+}
+
+function saveCurrentUser() {
+  if (currentUser) {
+    localStorage.setItem("stnCurrentUser", JSON.stringify(currentUser));
+  } else {
+    localStorage.removeItem("stnCurrentUser");
+  }
 }
 
 document.getElementById("loadUserBtn").addEventListener("click", async () => {
@@ -62,6 +64,7 @@ document.getElementById("loadUserBtn").addEventListener("click", async () => {
 
   clearSelectedArea();
   currentUser = null;
+  saveCurrentUser();
 
   setText("userName", "");
   setText("userEmail", "");
@@ -98,6 +101,7 @@ document.getElementById("loadUserBtn").addEventListener("click", async () => {
 
     const row = data.data;
     currentUser = row;
+    saveCurrentUser();
 
     setText("userName", row.UserName);
     setText("userEmail", row.UserEmail);
@@ -161,7 +165,7 @@ document.getElementById("postOutboundBtn").addEventListener("click", () => {
 
 document.getElementById("checkSTNBtn").addEventListener("click", () => {
   if (!canUseSelectedArea()) return;
-  alert(`Check STN for ${selectedArea} will be built next.`);
+  alert(`Check STN for ${selectedArea} will be built later.`);
 });
 
 document.getElementById("backBtn").addEventListener("click", () => {
