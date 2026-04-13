@@ -1,0 +1,10 @@
+{
+  "name": "stn-app-frontend",
+  "private": true,
+  "devDependencies": {
+    "@azure/static-web-apps-cli": "^2.0.2"
+  },
+  "scripts": {
+    "start": "swa start ./src"
+  }
+}
