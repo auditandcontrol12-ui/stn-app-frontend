@@ -1,5 +1,5 @@
 document.getElementById("loginBtn").addEventListener("click", () => {
-  window.location.href = "/login";
+  window.location.href = "/.auth/login/aad";
 });
 
 document.getElementById("dashboardBtn").addEventListener("click", () => {
