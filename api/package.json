@@ -1,0 +1,8 @@
+{
+  "name": "stn-api",
+  "version": "1.0.0",
+  "main": "getMe/*.js",
+  "dependencies": {
+    "@azure/functions": "^4.5.0"
+  }
+}
