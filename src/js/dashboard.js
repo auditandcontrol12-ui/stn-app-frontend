@@ -80,7 +80,7 @@ async function loadUserAccess() {
   try {
     output.textContent = "Loading user access...";
 
-    const res = await fetch("/api/getUserAccess");
+    const res = await fetch("/api/getUserAccess", { credentials: "include" });
     const text = await res.text();
 
     let data;
@@ -140,8 +140,7 @@ document.getElementById("postOutboundBtn").addEventListener("click", () => {
 });
 
 document.getElementById("checkSTNBtn").addEventListener("click", () => {
-  if (!canUseSelectedArea()) return;
-  alert(`Check STN for ${selectedArea} will be built later.`);
+  window.location.href = "/check-stn.html";
 });
 
 document.getElementById("logoutBtn").addEventListener("click", async () => {

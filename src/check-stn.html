@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Check STN</title>
+  <link rel="stylesheet" href="/css/app.css" />
+</head>
+<body>
+  <div class="container print-shell">
+    <div class="top-hero">
+      <div>
+        <span class="hero-badge">STN Search</span>
+        <h1>Check STN</h1>
+        <div class="page-subtitle">
+          Search by 4-digit STN number and review the document details.
+        </div>
+      </div>
+    </div>
+
+    <div class="card no-print">
+      <div class="section-title">Search</div>
+      <div class="form-grid search-grid">
+        <div class="field-block">
+          <label for="searchSeqNo">STN 4-Digit Number</label>
+          <input id="searchSeqNo" type="number" placeholder="Enter STNSeqNo" />
+        </div>
+      </div>
+      <div class="action-row">
+        <button id="searchBtn">Search</button>
+        <button id="searchPrintBtn" class="success" style="display:none;">Print / Save PDF</button>
+        <button id="backDashboardBtn" class="secondary">Back to Dashboard</button>
+      </div>
+      <div id="searchStatusBanner" class="status-banner status-unsaved" style="margin-top:14px;">
+        Enter an STN number to search.
+      </div>
+    </div>
+
+    <div id="searchResultWrap" style="display:none;">
+      <div class="print-header print-check-header print-only-block">
+        <div class="print-header-left">
+          <img src="/assets/PrintLogo.jpeg" alt="Print Logo" class="print-logo" />
+        </div>
+        <div class="print-header-center">
+          <div class="print-org">Business Data and Internal Control</div>
+          <div class="print-title" id="checkPrintTitle">Stock Transfer Note</div>
+          <div class="print-subtitle">Official Internal Document</div>
+        </div>
+        <div class="print-header-right">
+          <div class="print-doc-meta">
+            <div><strong>STN No:</strong> <span id="checkPrintStnNumber"></span></div>
+            <div><strong>Status:</strong> <span id="checkPrintStatus"></span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card print-card">
+        <div class="section-title">Document Summary</div>
+        <div class="summary-grid print-summary-grid">
+          <div class="summary-item">
+            <div class="label">STN Number</div>
+            <div class="value" id="ckStnNumber"></div>
+          </div>
+          <div class="summary-item">
+            <div class="label">STN ID</div>
+            <div class="value" id="ckStnId"></div>
+          </div>
+          <div class="summary-item">
+            <div class="label">STN Type</div>
+            <div class="value" id="ckStnType"></div>
+          </div>
+          <div class="summary-item">
+            <div class="label">Status</div>
+            <div class="value" id="ckStatus"></div>
+          </div>
+          <div class="summary-item">
+            <div class="label">Warehouse From</div>
+            <div class="value" id="ckWarehouseFrom"></div>
+          </div>
+          <div class="summary-item">
+            <div class="label">Warehouse To</div>
+            <div class="value" id="ckWarehouseTo"></div>
+          </div>
+          <div class="summary-item">
+            <div class="label">Created By</div>
+            <div class="value" id="ckCreatedBy"></div>
+          </div>
+          <div class="summary-item">
+            <div class="label">Submitted At</div>
+            <div class="value" id="ckSubmittedAt"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card print-card">
+        <div class="section-title">Remarks</div>
+        <div id="ckRemarks" class="info-banner"></div>
+      </div>
+
+      <div class="card print-card">
+        <div class="section-title">Line Details</div>
+        <div class="lines-table-wrap print-lines-wrap">
+          <table class="lines-table print-lines-table">
+            <thead>
+              <tr>
+                <th class="col-line">Line</th>
+                <th>Item Code</th>
+                <th>Item Name</th>
+                <th>UOM</th>
+                <th>Batch Number</th>
+                <th>Qty</th>
+                <th>Line Remarks</th>
+              </tr>
+            </thead>
+            <tbody id="checkLinesContainer"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card print-card print-only-block">
+        <div class="print-signatures">
+          <div class="print-sign-box">
+            <div class="print-sign-label">Prepared By</div>
+            <div class="print-sign-line"></div>
+            <div class="print-sign-name" id="checkPreparedBy"></div>
+          </div>
+          <div class="print-sign-box">
+            <div class="print-sign-label">Authorized Sign</div>
+            <div class="print-sign-line"></div>
+            <div class="print-sign-name">Sign</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card output-card no-print">
+        <pre id="checkOutput">Waiting...</pre>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/check-stn.js"></script>
+</body>
+</html>

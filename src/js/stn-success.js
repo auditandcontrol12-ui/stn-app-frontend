@@ -2,7 +2,8 @@ const params = new URLSearchParams(window.location.search);
 const stnId = params.get("stnId") || "";
 
 function setText(id, value) {
-  document.getElementById(id).textContent = value ?? "";
+  const el = document.getElementById(id);
+  if (el) el.textContent = value ?? "";
 }
 
 function warehouseDisplay(code, custom) {
@@ -21,6 +22,15 @@ function formatDateTime(value) {
   }
 }
 
+function getPrintableType(stnType) {
+  if (!stnType) return "Stock Transfer Note";
+  const map = {
+    IN: "Stock Transfer Note - Inbound",
+    OB: "Stock Transfer Note - Outbound"
+  };
+  return map[stnType] || `Stock Transfer Note - ${stnType}`;
+}
+
 async function loadSubmittedSTN() {
   const output = document.getElementById("successOutput");
   const linesBody = document.getElementById("successLinesContainer");
@@ -31,7 +41,9 @@ async function loadSubmittedSTN() {
   }
 
   try {
-    const res = await fetch(`/api/getSTN?stnId=${encodeURIComponent(stnId)}`);
+    const res = await fetch(`/api/getSTN?stnId=${encodeURIComponent(stnId)}`, {
+      credentials: "include"
+    });
     const text = await res.text();
 
     let data;
@@ -51,14 +63,26 @@ async function loadSubmittedSTN() {
     const h = data.header;
     const lines = data.lines || [];
 
+    const warehouseFromText = warehouseDisplay(h.WarehouseFrom, h.WarehouseFromCustom);
+    const warehouseToText = warehouseDisplay(h.WarehouseTo, h.WarehouseToCustom);
+    const submittedAtText = formatDateTime(h.SubmittedDateTime);
+    const printTitle = getPrintableType(h.STNType);
+
+    document.title = h.STNNumber || "STN";
+
     setText("scStnNumber", h.STNNumber);
     setText("scStnId", h.STNId);
     setText("scStnType", h.STNType);
     setText("scStatus", h.Status);
-    setText("scWarehouseFrom", warehouseDisplay(h.WarehouseFrom, h.WarehouseFromCustom));
-    setText("scWarehouseTo", warehouseDisplay(h.WarehouseTo, h.WarehouseToCustom));
+    setText("scWarehouseFrom", warehouseFromText);
+    setText("scWarehouseTo", warehouseToText);
     setText("scCreatedBy", h.CreatedBy);
-    setText("scSubmittedAt", formatDateTime(h.SubmittedDateTime));
+    setText("scSubmittedAt", submittedAtText);
+
+    setText("printTitle", printTitle);
+    setText("printStnNumber", h.STNNumber);
+    setText("printStatus", h.Status);
+    setText("printPreparedBy", h.CreatedBy);
 
     linesBody.innerHTML = "";
 
@@ -85,15 +109,7 @@ document.getElementById("printBtn").addEventListener("click", () => {
 });
 
 document.getElementById("newEntryBtn").addEventListener("click", () => {
-  const last = localStorage.getItem("stnLastSubmitted");
   let selectedArea = localStorage.getItem("selectedArea") || "";
-
-  try {
-    const lastObj = JSON.parse(last);
-    if (lastObj?.stnId) {
-      // nothing needed, just keep area from dashboard
-    }
-  } catch {}
 
   if (!selectedArea) {
     window.location.href = "/dashboard.html";

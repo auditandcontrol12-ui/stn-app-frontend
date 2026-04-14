@@ -393,6 +393,7 @@ pre {
   border-color: #e2e8f0;
   color: #475569;
 }
+
 .auth-page {
   margin: 0;
   min-height: 100vh;
@@ -761,5 +762,256 @@ pre {
   .auth-form input,
   .auth-form button {
     height: 46px;
+  }
+}
+
+.status-card {
+  margin-bottom: 0;
+}
+
+.status-banner {
+  padding: 14px 16px;
+  border-radius: 12px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.status-unsaved {
+  background: #fff1f1;
+  color: #a33a3a;
+  border: 1px solid #f0b5b5;
+}
+
+.status-draft {
+  background: #fff9e8;
+  color: #8a6a00;
+  border: 1px solid #ebd48a;
+}
+
+.status-submitted {
+  background: #ecfff1;
+  color: #177245;
+  border: 1px solid #9ed9b2;
+}
+
+/* PRINT LAYOUT */
+.print-only-block {
+  display: none;
+}
+
+.print-header {
+  display: none;
+}
+
+.print-header-left,
+.print-header-right {
+  width: 22%;
+}
+
+.print-header-center {
+  width: 56%;
+  text-align: center;
+}
+
+.print-logo {
+  width: 96px;
+  height: auto;
+  object-fit: contain;
+}
+
+.print-org {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 6px;
+}
+
+.print-title {
+  font-size: 24px;
+  font-weight: 800;
+  color: #111827;
+  margin-bottom: 4px;
+}
+
+.print-subtitle {
+  font-size: 12px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.print-doc-meta {
+  text-align: right;
+  font-size: 12px;
+  color: #334155;
+  line-height: 1.7;
+}
+
+.print-card {
+  break-inside: avoid;
+}
+
+.print-lines-wrap {
+  overflow: visible;
+}
+
+.print-lines-table {
+  min-width: 100%;
+}
+
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000;
+    font-size: 11pt;
+  }
+
+  .container.print-shell {
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only-block,
+  .print-header {
+    display: flex !important;
+  }
+
+  .print-header {
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    border-bottom: 2px solid #1f2937;
+    padding-bottom: 14px;
+    margin-bottom: 16px;
+  }
+
+  .page-shell {
+    gap: 12px;
+  }
+
+  .card,
+  .summary-item,
+  .lines-table-wrap,
+  .print-card {
+    box-shadow: none !important;
+    background: #ffffff !important;
+  }
+
+  .card,
+  .print-card {
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 8px !important;
+    padding: 12px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .section-title {
+    font-size: 14pt;
+    margin-bottom: 10px;
+    color: #000000;
+  }
+
+  .print-summary-grid {
+    grid-template-columns: repeat(4, minmax(120px, 1fr));
+    gap: 8px;
+  }
+
+  .summary-item {
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 8px 10px;
+  }
+
+  .summary-item .label {
+    font-size: 9pt;
+    color: #475569;
+  }
+
+  .summary-item .value {
+    font-size: 11pt;
+    color: #000000;
+  }
+
+  .lines-table {
+    min-width: 100% !important;
+    border-collapse: collapse;
+  }
+
+  .lines-table thead th {
+    position: static !important;
+    background: #e5e7eb !important;
+    color: #000000 !important;
+    border: 1px solid #cbd5e1;
+    padding: 8px;
+    font-size: 9.5pt;
+  }
+
+  .lines-table tbody td {
+    border: 1px solid #e5e7eb;
+    padding: 8px;
+    font-size: 9.5pt;
+    color: #000000;
+  }
+
+  .lines-table tbody tr:nth-child(even) {
+    background: #ffffff !important;
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 14mm;
+  }
+}
+.search-grid {
+  grid-template-columns: minmax(260px, 420px);
+}
+
+.print-signatures {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(240px, 1fr));
+  gap: 48px;
+  padding-top: 20px;
+}
+
+.print-sign-box {
+  min-height: 90px;
+}
+
+.print-sign-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #475569;
+  margin-bottom: 26px;
+}
+
+.print-sign-line {
+  border-bottom: 1.5px solid #1f2937;
+  margin-bottom: 8px;
+}
+
+.print-sign-name {
+  font-size: 12px;
+  color: #111827;
+  font-weight: 600;
+}
+
+.print-check-header {
+  margin-bottom: 16px;
+}
+
+@media print {
+  .print-signatures {
+    gap: 36px;
+    padding-top: 14px;
+  }
+
+  .print-sign-label,
+  .print-sign-name {
+    color: #000000;
   }
 }

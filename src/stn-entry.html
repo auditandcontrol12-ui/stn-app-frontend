@@ -12,11 +12,18 @@
       <div>
         <span class="hero-badge">STN Operations</span>
         <h1>STN Entry</h1>
-        <div class="page-subtitle">Create your draft stock transfer note with aligned headers and structured lines.</div>
+        <div class="page-subtitle">Create your stock transfer note with aligned headers and structured lines.</div>
       </div>
     </div>
 
     <div class="page-shell">
+      <div class="card status-card">
+        <div class="section-title">Document Status</div>
+        <div id="entryStatusBanner" class="status-banner status-unsaved">
+          Not yet saved. Current changes are only in this session and are not stored in the database.
+        </div>
+      </div>
+
       <div class="card">
         <div class="section-title">Document Summary</div>
         <div class="summary-grid">
@@ -34,7 +41,7 @@
           </div>
           <div class="summary-item">
             <div class="label">Status</div>
-            <div class="value">Draft</div>
+            <div class="value" id="entryStatusText">Unsaved</div>
           </div>
           <div class="summary-item">
             <div class="label">Created By</div>

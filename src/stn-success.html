@@ -7,8 +7,8 @@
   <link rel="stylesheet" href="/css/app.css" />
 </head>
 <body>
-  <div class="container">
-    <div class="top-hero">
+  <div class="container print-shell" id="printRoot">
+    <div class="top-hero no-print">
       <div>
         <span class="hero-badge">Submission Complete</span>
         <h1>STN Submitted Successfully</h1>
@@ -18,10 +18,34 @@
       </div>
     </div>
 
+    <div class="card status-card no-print">
+      <div class="section-title">Document Status</div>
+      <div class="status-banner status-submitted">
+        Successfully submitted. This STN has been stored in the database.
+      </div>
+    </div>
+
+    <div class="print-header print-only-block">
+      <div class="print-header-left">
+        <img src="/assets/PrintLogo.jpeg" alt="Print Logo" class="print-logo" />
+      </div>
+      <div class="print-header-center">
+        <div class="print-org">Business Data and Internal Control</div>
+        <div class="print-title" id="printTitle">Stock Transfer Note</div>
+        <div class="print-subtitle">Official Internal Document</div>
+      </div>
+      <div class="print-header-right">
+        <div class="print-doc-meta">
+          <div><strong>STN No:</strong> <span id="printStnNumber"></span></div>
+          <div><strong>Status:</strong> <span id="printStatus"></span></div>
+        </div>
+      </div>
+    </div>
+
     <div class="page-shell">
-      <div class="card">
+      <div class="card print-card">
         <div class="section-title">Submission Result</div>
-        <div class="summary-grid">
+        <div class="summary-grid print-summary-grid">
           <div class="summary-item">
             <div class="label">STN Number</div>
             <div class="value" id="scStnNumber"></div>
@@ -57,10 +81,10 @@
         </div>
       </div>
 
-      <div class="card">
+      <div class="card print-card">
         <div class="section-title">Line Details</div>
-        <div class="lines-table-wrap">
-          <table class="lines-table">
+        <div class="lines-table-wrap print-lines-wrap">
+          <table class="lines-table print-lines-table">
             <thead>
               <tr>
                 <th class="col-line">Line</th>
@@ -77,7 +101,22 @@
         </div>
       </div>
 
-      <div class="card soft">
+      <div class="card print-card print-only-block">
+        <div class="print-signatures">
+          <div class="print-sign-box">
+            <div class="print-sign-label">Prepared By</div>
+            <div class="print-sign-line"></div>
+            <div class="print-sign-name" id="printPreparedBy"></div>
+          </div>
+          <div class="print-sign-box">
+            <div class="print-sign-label">Authorized Sign</div>
+            <div class="print-sign-line"></div>
+            <div class="print-sign-name">Sign</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card soft no-print">
         <div class="action-row">
           <button id="printBtn" class="success">Print / Save PDF</button>
           <button id="newEntryBtn">New Entry</button>
@@ -85,7 +124,7 @@
         </div>
       </div>
 
-      <div class="card output-card">
+      <div class="card output-card no-print">
         <pre id="successOutput">Loading submitted STN...</pre>
       </div>
     </div>

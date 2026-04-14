@@ -55,8 +55,34 @@ function loadSavedDraft() {
   }
 }
 
+function setEntryStatus(status) {
+  const statusText = document.getElementById("entryStatusText");
+  const banner = document.getElementById("entryStatusBanner");
+
+  if (!statusText || !banner) return;
+
+  if (status === "Draft") {
+    statusText.textContent = "Draft";
+    banner.className = "status-banner status-draft";
+    banner.textContent = "Saved as Draft. You can still make changes and resave before final submission.";
+    return;
+  }
+
+  if (status === "Submitted") {
+    statusText.textContent = "Submitted";
+    banner.className = "status-banner status-submitted";
+    banner.textContent = "Successfully submitted. This STN has already been stored in the database.";
+    return;
+  }
+
+  statusText.textContent = "Unsaved";
+  banner.className = "status-banner status-unsaved";
+  banner.textContent = "Not yet saved. Current changes are only in this session and are not stored in the database.";
+}
+
 function fillHeaderInfo() {
   const user = loadCurrentUser();
+  const existingDraft = loadSavedDraft();
 
   const txnTypeEl = document.getElementById("txnType");
   const businessAreaEl = document.getElementById("businessArea");
@@ -69,6 +95,8 @@ function fillHeaderInfo() {
   if (stnDateTextEl) stnDateTextEl.textContent = todayString();
   if (createdByEl) createdByEl.textContent = user?.HoldingName || user?.UserName || "";
   if (createdByEmailEl) createdByEmailEl.textContent = user?.UserEmail || "";
+
+  setEntryStatus(existingDraft?.status || "Unsaved");
 }
 
 function buildWarehouseOptions(selectEl) {
@@ -178,7 +206,13 @@ function addLineRow(lineData = null) {
   row.querySelector(".remove-line-btn").addEventListener("click", () => {
     row.remove();
     refreshLineNumbers();
+    markDraftAsUnsavedIfNeeded();
   });
+
+  row.querySelector(".line-batch").addEventListener("input", markDraftAsUnsavedIfNeeded);
+  row.querySelector(".line-qty").addEventListener("input", markDraftAsUnsavedIfNeeded);
+  row.querySelector(".line-remarks").addEventListener("input", markDraftAsUnsavedIfNeeded);
+  itemSelect.addEventListener("change", markDraftAsUnsavedIfNeeded);
 
   if (lineData) {
     itemSelect.value = lineData.itemCode || "";
@@ -191,6 +225,7 @@ function addLineRow(lineData = null) {
 
 function collectFormData() {
   const user = loadCurrentUser();
+  const savedDraft = loadSavedDraft();
 
   const lines = [...document.querySelectorAll("#linesContainer > tr")].map((row, index) => ({
     lineNu: index + 1,
@@ -203,6 +238,9 @@ function collectFormData() {
   }));
 
   return {
+    stnId: savedDraft?.stnId || null,
+    stnNumber: savedDraft?.stnNumber || "",
+    stnSeqNo: savedDraft?.stnSeqNo || null,
     stnType: txnType,
     businessArea,
     stnDate: todayString(),
@@ -213,7 +251,7 @@ function collectFormData() {
     remarks: document.getElementById("remarks")?.value?.trim() || "",
     createdBy: user?.HoldingName || user?.UserName || "",
     createdByEmail: user?.UserEmail || "",
-    status: "Draft",
+    status: savedDraft?.status === "Draft" ? "Draft" : "Unsaved",
     lines
   };
 }
@@ -272,61 +310,74 @@ function restoreDraftToForm(draft) {
   }
 
   refreshLineNumbers();
+  setEntryStatus(draft.status || "Unsaved");
   return true;
 }
 
-async function loadLookups() {
-  try {
-    if (!businessArea) {
-      log("Business area missing in URL.");
-      return;
-    }
-
-    log(`Loading lookups for ${businessArea}...`);
-
-    const res = await fetch(`/api/getLookups?area=${encodeURIComponent(businessArea)}`);
-    const text = await res.text();
-
-    let data;
+function loadLookups() {
+  return (async () => {
     try {
-      data = JSON.parse(text);
-    } catch {
-      log(`Non-JSON response:\n${text}`);
-      return;
+      if (!businessArea) {
+        log("Business area missing in URL.");
+        return;
+      }
+
+      log(`Loading lookups for ${businessArea}...`);
+
+      const res = await fetch(`/api/getLookups?area=${encodeURIComponent(businessArea)}`);
+      const text = await res.text();
+
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        log(`Non-JSON response:\n${text}`);
+        return;
+      }
+
+      if (!data.success) {
+        log("Lookup API returned failure.", data);
+        return;
+      }
+
+      items = data.items || [];
+      warehouses = data.warehouses || [];
+
+      buildWarehouseOptions(document.getElementById("warehouseFrom"));
+      buildWarehouseOptions(document.getElementById("warehouseTo"));
+
+      const restored = restoreDraftToForm(loadSavedDraft());
+
+      if (!restored) {
+        addLineRow();
+      }
+
+      log("Lookups loaded successfully.", {
+        success: true,
+        itemCount: items.length,
+        warehouseCount: warehouses.length,
+        area: businessArea,
+        restoredDraft: restored
+      });
+    } catch (err) {
+      log(`Error while loading lookups: ${err.message}`);
     }
+  })();
+}
 
-    if (!data.success) {
-      log("Lookup API returned failure.", data);
-      return;
-    }
-
-    items = data.items || [];
-    warehouses = data.warehouses || [];
-
-    buildWarehouseOptions(document.getElementById("warehouseFrom"));
-    buildWarehouseOptions(document.getElementById("warehouseTo"));
-
-    const restored = restoreDraftToForm(loadSavedDraft());
-
-    if (!restored) {
-      addLineRow();
-    }
-
-    log("Lookups loaded successfully.", {
-      success: true,
-      itemCount: items.length,
-      warehouseCount: warehouses.length,
-      area: businessArea,
-      restoredDraft: restored
-    });
-  } catch (err) {
-    log(`Error while loading lookups: ${err.message}`);
+function markDraftAsUnsavedIfNeeded() {
+  const savedDraft = loadSavedDraft();
+  if (savedDraft?.status === "Draft") {
+    setEntryStatus("Unsaved");
   }
 }
 
 function bindEvents() {
   const warehouseFrom = document.getElementById("warehouseFrom");
   const warehouseTo = document.getElementById("warehouseTo");
+  const warehouseFromCustom = document.getElementById("warehouseFromCustom");
+  const warehouseToCustom = document.getElementById("warehouseToCustom");
+  const remarks = document.getElementById("remarks");
   const addLineBtn = document.getElementById("addLineBtn");
   const previewBtn = document.getElementById("previewBtn");
   const backDashboardBtn = document.getElementById("backDashboardBtn");
@@ -334,19 +385,26 @@ function bindEvents() {
   if (warehouseFrom) {
     warehouseFrom.addEventListener("change", () => {
       toggleCustomWarehouse("warehouseFrom", "warehouseFromCustom");
+      markDraftAsUnsavedIfNeeded();
     });
   }
 
   if (warehouseTo) {
     warehouseTo.addEventListener("change", () => {
       toggleCustomWarehouse("warehouseTo", "warehouseToCustom");
+      markDraftAsUnsavedIfNeeded();
     });
   }
+
+  if (warehouseFromCustom) warehouseFromCustom.addEventListener("input", markDraftAsUnsavedIfNeeded);
+  if (warehouseToCustom) warehouseToCustom.addEventListener("input", markDraftAsUnsavedIfNeeded);
+  if (remarks) remarks.addEventListener("input", markDraftAsUnsavedIfNeeded);
 
   if (addLineBtn) {
     addLineBtn.addEventListener("click", () => {
       addLineRow();
       refreshLineNumbers();
+      markDraftAsUnsavedIfNeeded();
     });
   }
 
@@ -360,6 +418,7 @@ function bindEvents() {
         return;
       }
 
+      data.status = loadSavedDraft()?.status === "Draft" ? "Draft" : "Unsaved";
       localStorage.setItem("stnDraftData", JSON.stringify(data));
       window.location.href = "/stn-preview.html";
     });

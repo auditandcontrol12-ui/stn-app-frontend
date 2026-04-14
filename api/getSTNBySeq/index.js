@@ -36,17 +36,17 @@ async function getAuthorizedAreas(pool, sessionId) {
   return areas;
 }
 
-app.http("getSTN", {
+app.http("getSTNBySeq", {
   methods: ["GET"],
   authLevel: "anonymous",
   handler: async (request) => {
     try {
-      const stnId = request.query.get("stnId");
+      const seqNo = request.query.get("seqNo");
 
-      if (!stnId) {
+      if (!seqNo) {
         return {
           status: 400,
-          jsonBody: { success: false, message: "stnId is required." }
+          jsonBody: { success: false, message: "seqNo is required." }
         };
       }
 
@@ -56,7 +56,7 @@ app.http("getSTN", {
       if (!sessionId) {
         return {
           status: 404,
-          jsonBody: { success: false, message: "STN not found." }
+          jsonBody: { success: false, message: "No data found." }
         };
       }
 
@@ -66,12 +66,12 @@ app.http("getSTN", {
       if (!allowedAreas || allowedAreas.length === 0) {
         return {
           status: 404,
-          jsonBody: { success: false, message: "STN not found." }
+          jsonBody: { success: false, message: "No data found." }
         };
       }
 
       const headerResult = await pool.request()
-        .input("STNId", sql.BigInt, Number(stnId))
+        .input("STNSeqNo", sql.Int, Number(seqNo))
         .query(`
           SELECT TOP 1
               STNId,
@@ -91,13 +91,14 @@ app.http("getSTN", {
               CreatedDateTime,
               SubmittedDateTime
           FROM app.STNHeader
-          WHERE STNId = @STNId;
+          WHERE STNSeqNo = @STNSeqNo
+          ORDER BY STNId DESC;
         `);
 
       if (headerResult.recordset.length === 0) {
         return {
           status: 404,
-          jsonBody: { success: false, message: "STN not found." }
+          jsonBody: { success: false, message: "No data found." }
         };
       }
 
@@ -106,12 +107,12 @@ app.http("getSTN", {
       if (!allowedAreas.includes(header.BusinessArea)) {
         return {
           status: 404,
-          jsonBody: { success: false, message: "STN not found." }
+          jsonBody: { success: false, message: "No data found." }
         };
       }
 
       const lineResult = await pool.request()
-        .input("STNId", sql.BigInt, Number(stnId))
+        .input("STNId", sql.BigInt, Number(header.STNId))
         .query(`
           SELECT
               STNLineId,
