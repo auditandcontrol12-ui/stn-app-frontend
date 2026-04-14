@@ -12,28 +12,28 @@ function getSessionExpiry() {
 }
 
 // For Azure sessions
-// function buildSessionCookie(sessionId) {
-//   const cookieName = process.env.SESSION_COOKIE_NAME || "stn_session";
-//   return `${cookieName}=${sessionId}; Path=/; HttpOnly; Secure; SameSite=Lax`;
-// }
-
-// function buildLogoutCookie() {
-//   const cookieName = process.env.SESSION_COOKIE_NAME || "stn_session";
-//   return `${cookieName}=; Path=/; HttpOnly; Secure; SameSite=Lax; Expires=Thu, 01 Jan 1970 00:00:00 GMT`;
-// }
-
-// For Local Sessions
 function buildSessionCookie(sessionId) {
   const cookieName = process.env.SESSION_COOKIE_NAME || "stn_session";
-  const isLocal = (process.env.NODE_ENV || "").toLowerCase() === "development";
-  return `${cookieName}=${sessionId}; Path=/; HttpOnly; SameSite=Lax${isLocal ? "" : "; Secure"}`;
+  return `${cookieName}=${sessionId}; Path=/; HttpOnly; Secure; SameSite=Lax`;
 }
 
 function buildLogoutCookie() {
   const cookieName = process.env.SESSION_COOKIE_NAME || "stn_session";
-  const isLocal = (process.env.NODE_ENV || "").toLowerCase() === "development";
-  return `${cookieName}=; Path=/; HttpOnly; SameSite=Lax${isLocal ? "" : "; Secure"}; Expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+  return `${cookieName}=; Path=/; HttpOnly; Secure; SameSite=Lax; Expires=Thu, 01 Jan 1970 00:00:00 GMT`;
 }
+
+// For Local Sessions
+// function buildSessionCookie(sessionId) {
+//   const cookieName = process.env.SESSION_COOKIE_NAME || "stn_session";
+//   const isLocal = (process.env.NODE_ENV || "").toLowerCase() === "development";
+//   return `${cookieName}=${sessionId}; Path=/; HttpOnly; SameSite=Lax${isLocal ? "" : "; Secure"}`;
+// }
+
+// function buildLogoutCookie() {
+//   const cookieName = process.env.SESSION_COOKIE_NAME || "stn_session";
+//   const isLocal = (process.env.NODE_ENV || "").toLowerCase() === "development";
+//   return `${cookieName}=; Path=/; HttpOnly; SameSite=Lax${isLocal ? "" : "; Secure"}; Expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+// }
 
 function readCookie(request, cookieName) {
   const cookieHeader = request.headers.get("cookie") || "";

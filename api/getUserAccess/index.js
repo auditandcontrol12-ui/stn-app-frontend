@@ -82,6 +82,7 @@ app.http("getUserAccess", {
               UserRole,
               IsAllowedManufacturing,
               IsAllowedDistribution,
+              IsManager,
               IsActive
           FROM app.STNUserAccess
           WHERE UserEmail = @UserEmail
