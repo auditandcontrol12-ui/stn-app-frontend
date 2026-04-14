@@ -7,12 +7,6 @@
     { "route": "/no-access.html", "allowedRoles": ["authenticated"] },
     { "route": "/logout", "redirect": "/.auth/logout" }
   ],
-  "responseOverrides": {
-    "401": {
-      "statusCode": 302,
-      "redirect": "/.auth/login/aad?post_login_redirect_uri=.referrer"
-    }
-  },
   "navigationFallback": {
     "rewrite": "/index.html",
     "exclude": [
