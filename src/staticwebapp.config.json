@@ -1,29 +1,11 @@
 {
   "routes": [
-    {
-      "route": "/dashboard.html",
-      "allowedRoles": ["authenticated"]
-    },
-    {
-      "route": "/stn-entry.html",
-      "allowedRoles": ["authenticated"]
-    },
-    {
-      "route": "/stn-preview.html",
-      "allowedRoles": ["authenticated"]
-    },
-    {
-      "route": "/stn-success.html",
-      "allowedRoles": ["authenticated"]
-    },
-    {
-      "route": "/no-access.html",
-      "allowedRoles": ["authenticated"]
-    },
-    {
-      "route": "/logout",
-      "redirect": "/.auth/logout"
-    }
+    { "route": "/dashboard.html", "allowedRoles": ["authenticated"] },
+    { "route": "/stn-entry.html", "allowedRoles": ["authenticated"] },
+    { "route": "/stn-preview.html", "allowedRoles": ["authenticated"] },
+    { "route": "/stn-success.html", "allowedRoles": ["authenticated"] },
+    { "route": "/no-access.html", "allowedRoles": ["authenticated"] },
+    { "route": "/logout", "redirect": "/.auth/logout" }
   ],
   "responseOverrides": {
     "401": {
