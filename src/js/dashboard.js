@@ -144,8 +144,17 @@ document.getElementById("checkSTNBtn").addEventListener("click", () => {
   alert(`Check STN for ${selectedArea} will be built later.`);
 });
 
-document.getElementById("logoutBtn").addEventListener("click", () => {
-  window.location.href = "/logout";
+document.getElementById("logoutBtn").addEventListener("click", async () => {
+  await fetch("/api/logout", {
+    method: "POST",
+    credentials: "include"
+  });
+
+  localStorage.removeItem("stnCurrentUser");
+  localStorage.removeItem("selectedArea");
+  sessionStorage.removeItem("login_email");
+
+  window.location.href = "/";
 });
 
 refreshSelectedArea();
