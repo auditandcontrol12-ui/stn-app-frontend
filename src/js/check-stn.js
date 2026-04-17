@@ -30,6 +30,7 @@ function getPrintableType(stnType) {
 
 function setSearchBanner(message, type) {
   const banner = document.getElementById("searchStatusBanner");
+  if (!banner) return;
   banner.className = `status-banner ${type}`;
   banner.textContent = message;
 }
@@ -44,10 +45,29 @@ function getCurrentUser() {
   }
 }
 
+function canEditDraft(header, currentUser) {
+  if (!header || !currentUser) return false;
+  if (header.Status !== "Draft") return false;
+
+  const isManager = !!currentUser.IsManager;
+  const isCreator =
+    (currentUser.UserEmail || "").toLowerCase() ===
+    (header.CreatedByEmail || "").toLowerCase();
+
+  return isManager || isCreator;
+}
+
 let lastFoundSTN = null;
 
+function hideSearchActions() {
+  document.getElementById("searchResultWrap")?.style && (document.getElementById("searchResultWrap").style.display = "none");
+  document.getElementById("searchPrintBtn")?.style && (document.getElementById("searchPrintBtn").style.display = "none");
+  document.getElementById("editSTNBtn")?.style && (document.getElementById("editSTNBtn").style.display = "none");
+  document.getElementById("deleteSTNBtn")?.style && (document.getElementById("deleteSTNBtn").style.display = "none");
+}
+
 async function searchSTN() {
-  const seqNo = document.getElementById("searchSeqNo").value.trim();
+  const searchValue = document.getElementById("searchSeqNo")?.value.trim() || "";
   const output = document.getElementById("checkOutput");
   const linesBody = document.getElementById("checkLinesContainer");
   const resultWrap = document.getElementById("searchResultWrap");
@@ -55,46 +75,38 @@ async function searchSTN() {
   const editBtn = document.getElementById("editSTNBtn");
   const deleteBtn = document.getElementById("deleteSTNBtn");
 
-  if (!seqNo) {
-    setSearchBanner("Please enter STN number.", "status-unsaved");
-    resultWrap.style.display = "none";
-    printBtn.style.display = "none";
-    editBtn.style.display = "none";
-    deleteBtn.style.display = "none";
+  if (!searchValue) {
+    setSearchBanner("Please enter STN sequence or STN number.", "status-unsaved");
+    hideSearchActions();
     return;
   }
 
   try {
     setSearchBanner("Searching STN...", "status-draft");
-    output.textContent = "Searching...";
+    if (output) output.textContent = "Searching...";
     lastFoundSTN = null;
 
-    const res = await fetch(`/api/getSTNBySeq?seqNo=${encodeURIComponent(seqNo)}`, {
+    const res = await fetch(`/api/getSTNBySeq?search=${encodeURIComponent(searchValue)}`, {
       credentials: "include"
     });
+
     const text = await res.text();
 
     let data;
     try {
       data = JSON.parse(text);
     } catch {
-      output.textContent = `Non-JSON response:\n${text}`;
+      if (output) output.textContent = `Non-JSON response:\n${text}`;
       setSearchBanner("Unexpected response received.", "status-unsaved");
-      resultWrap.style.display = "none";
-      printBtn.style.display = "none";
-      editBtn.style.display = "none";
-      deleteBtn.style.display = "none";
+      hideSearchActions();
       return;
     }
 
-    output.textContent = JSON.stringify(data, null, 2);
+    if (output) output.textContent = JSON.stringify(data, null, 2);
 
     if (!res.ok || !data.success) {
-      setSearchBanner("No data found.", "status-unsaved");
-      resultWrap.style.display = "none";
-      printBtn.style.display = "none";
-      editBtn.style.display = "none";
-      deleteBtn.style.display = "none";
+      setSearchBanner(data.message || "No data found.", "status-unsaved");
+      hideSearchActions();
       return;
     }
 
@@ -118,7 +130,7 @@ async function searchSTN() {
     setText("ckWarehouseFrom", warehouseFromText);
     setText("ckWarehouseTo", warehouseToText);
     setText("ckCreatedBy", h.CreatedBy);
-    setText("ckSubmittedAt", submittedAtText);
+    setText("ckSubmittedAt", submittedAtText || "-");
     setText("ckRemarks", h.Remarks || "-");
 
     setText("checkPrintTitle", printTitle);
@@ -126,93 +138,70 @@ async function searchSTN() {
     setText("checkPrintStatus", h.Status);
     setText("checkPreparedBy", h.CreatedBy);
 
-    linesBody.innerHTML = "";
+    if (linesBody) {
+      linesBody.innerHTML = "";
 
-    lines.forEach((line, index) => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td class="col-line">${index + 1}</td>
-        <td>${line.ItemCode || ""}</td>
-        <td>${line.ItemName || ""}</td>
-        <td>${line.UOM || ""}</td>
-        <td>${line.BatchNumber || ""}</td>
-        <td>${line.Qty || ""}</td>
-        <td>${line.LineRemarks || ""}</td>
-      `;
-      linesBody.appendChild(tr);
-    });
+      lines.forEach((line, index) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="col-line">${index + 1}</td>
+          <td>${line.ItemCode || ""}</td>
+          <td>${line.ItemName || ""}</td>
+          <td>${line.UOM || ""}</td>
+          <td>${line.BatchNumber || ""}</td>
+          <td>${line.Qty || ""}</td>
+          <td>${line.LineRemarks || ""}</td>
+        `;
+        linesBody.appendChild(tr);
+      });
+    }
 
     const currentUser = getCurrentUser();
     const isManager = !!currentUser?.IsManager;
+    const allowEdit = canEditDraft(h, currentUser);
 
-    resultWrap.style.display = "block";
-    printBtn.style.display = "inline-block";
-    editBtn.style.display = isManager ? "inline-block" : "none";
-    deleteBtn.style.display = isManager ? "inline-block" : "none";
+    if (resultWrap) resultWrap.style.display = "block";
+    if (printBtn) printBtn.style.display = "inline-block";
+    if (editBtn) editBtn.style.display = allowEdit ? "inline-block" : "none";
+    if (deleteBtn) deleteBtn.style.display = isManager ? "inline-block" : "none";
 
-    setSearchBanner(`STN found successfully. Area: ${h.BusinessArea}`, "status-submitted");
+    setSearchBanner(`STN found successfully. Status: ${h.Status}`, "status-submitted");
   } catch (err) {
-    output.textContent = `Error: ${err.message}`;
+    if (output) output.textContent = `Error: ${err.message}`;
     setSearchBanner(`Error: ${err.message}`, "status-unsaved");
-    document.getElementById("searchResultWrap").style.display = "none";
-    document.getElementById("searchPrintBtn").style.display = "none";
-    document.getElementById("editSTNBtn").style.display = "none";
-    document.getElementById("deleteSTNBtn").style.display = "none";
+    hideSearchActions();
   }
 }
 
-document.getElementById("searchBtn").addEventListener("click", searchSTN);
+document.getElementById("searchBtn")?.addEventListener("click", searchSTN);
 
-document.getElementById("searchSeqNo").addEventListener("keydown", (e) => {
+document.getElementById("searchSeqNo")?.addEventListener("keydown", (e) => {
   if (e.key === "Enter") {
     e.preventDefault();
     searchSTN();
   }
 });
 
-document.getElementById("searchPrintBtn").addEventListener("click", () => {
+document.getElementById("searchPrintBtn")?.addEventListener("click", () => {
   window.print();
 });
 
-document.getElementById("editSTNBtn").addEventListener("click", () => {
+document.getElementById("editSTNBtn")?.addEventListener("click", () => {
   if (!lastFoundSTN) return;
 
+  const currentUser = getCurrentUser();
+  if (!canEditDraft(lastFoundSTN.header, currentUser)) {
+    alert("Only the draft creator or a manager can edit this draft.");
+    return;
+  }
+
   const h = lastFoundSTN.header;
-  const lines = lastFoundSTN.lines || [];
-
-  const editDraft = {
-    stnId: h.STNId,
-    stnNumber: h.STNNumber,
-    stnSeqNo: h.STNSeqNo,
-    stnType: h.STNType,
-    businessArea: h.BusinessArea,
-    stnDate: h.STNDate ? String(h.STNDate).slice(0, 10) : "",
-    warehouseFrom: h.WarehouseFrom || "",
-    warehouseTo: h.WarehouseTo || "",
-    warehouseFromCustom: h.WarehouseFromCustom || "",
-    warehouseToCustom: h.WarehouseToCustom || "",
-    remarks: h.Remarks || "",
-    createdBy: h.CreatedBy || "",
-    createdByEmail: h.CreatedByEmail || "",
-    status: h.Status || "Draft",
-    lines: lines.map((line) => ({
-      lineNu: line.LineNu,
-      itemCode: line.ItemCode || "",
-      itemName: line.ItemName || "",
-      uom: line.UOM || "",
-      batchNumber: line.BatchNumber || "",
-      qty: line.Qty || "",
-      lineRemarks: line.LineRemarks || ""
-    }))
-  };
-
-  localStorage.setItem("stnDraftData", JSON.stringify(editDraft));
   localStorage.setItem("selectedArea", h.BusinessArea);
 
-  window.location.href = `/stn-entry.html?type=${encodeURIComponent(h.STNType)}&area=${encodeURIComponent(h.BusinessArea)}`;
+  window.location.href = `/stn-entry.html?type=${encodeURIComponent(h.STNType)}&area=${encodeURIComponent(h.BusinessArea)}&stnId=${encodeURIComponent(h.STNId)}`;
 });
 
-document.getElementById("deleteSTNBtn").addEventListener("click", async () => {
+document.getElementById("deleteSTNBtn")?.addEventListener("click", async () => {
   if (!lastFoundSTN) return;
 
   const ok = window.confirm(`Are you sure you want to delete ${lastFoundSTN.header.STNNumber}?`);
@@ -221,7 +210,7 @@ document.getElementById("deleteSTNBtn").addEventListener("click", async () => {
   const output = document.getElementById("checkOutput");
 
   try {
-    output.textContent = "Deleting STN...";
+    if (output) output.textContent = "Deleting STN...";
 
     const res = await fetch("/api/deleteSTN", {
       method: "POST",
@@ -232,9 +221,18 @@ document.getElementById("deleteSTNBtn").addEventListener("click", async () => {
       body: JSON.stringify({ stnId: lastFoundSTN.header.STNId })
     });
 
-    const data = await res.json();
+    const text = await res.text();
 
-    output.textContent = JSON.stringify(data, null, 2);
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      if (output) output.textContent = `Non-JSON response:\n${text}`;
+      alert("Unexpected response received.");
+      return;
+    }
+
+    if (output) output.textContent = JSON.stringify(data, null, 2);
 
     if (!res.ok || !data.success) {
       alert(data.message || "Delete failed.");
@@ -242,18 +240,15 @@ document.getElementById("deleteSTNBtn").addEventListener("click", async () => {
     }
 
     lastFoundSTN = null;
-    document.getElementById("searchResultWrap").style.display = "none";
-    document.getElementById("searchPrintBtn").style.display = "none";
-    document.getElementById("editSTNBtn").style.display = "none";
-    document.getElementById("deleteSTNBtn").style.display = "none";
+    hideSearchActions();
     setSearchBanner("STN deleted successfully.", "status-submitted");
     alert("STN deleted successfully.");
   } catch (err) {
-    output.textContent = `Error: ${err.message}`;
+    if (output) output.textContent = `Error: ${err.message}`;
     alert(err.message);
   }
 });
 
-document.getElementById("backDashboardBtn").addEventListener("click", () => {
+document.getElementById("backDashboardBtn")?.addEventListener("click", () => {
   window.location.href = "/dashboard.html";
 });

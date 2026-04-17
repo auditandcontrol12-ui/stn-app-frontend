@@ -1,11 +1,10 @@
 function setText(id, value) {
-  document.getElementById(id).textContent = value ?? "";
+  const el = document.getElementById(id);
+  if (el) el.textContent = value ?? "";
 }
 
 function warehouseDisplay(code, custom) {
-  if (code === "__OTHER__") {
-    return custom || "Other";
-  }
+  if (code === "__OTHER__") return custom || "Other";
   return code || "";
 }
 
@@ -24,16 +23,26 @@ function saveDraftLocal(draft) {
   localStorage.setItem("stnDraftData", JSON.stringify(draft));
 }
 
-function setPreviewStatus(status) {
+function togglePreviewActions(draft) {
+  const printBtn = document.getElementById("printDraftBtn");
+  const submitBtn = document.getElementById("submitPreviewBtn");
+
+  const hasRealDraft = !!draft?.stnId && draft?.status === "Draft";
+
+  if (printBtn) printBtn.style.display = hasRealDraft ? "inline-block" : "none";
+  if (submitBtn) submitBtn.style.display = hasRealDraft ? "inline-block" : "none";
+}
+
+function setPreviewStatus(status, hasRealDraft) {
   const statusText = document.getElementById("pvStatus");
   const banner = document.getElementById("previewStatusBanner");
 
   if (!statusText || !banner) return;
 
-  if (status === "Draft") {
+  if (status === "Draft" && hasRealDraft) {
     statusText.textContent = "Draft";
     banner.className = "status-banner status-draft";
-    banner.textContent = "Saved as Draft. You can still make changes and resave before final submission.";
+    banner.textContent = "Draft saved successfully. STN number created. You can now print draft or submit later.";
     return;
   }
 
@@ -46,7 +55,7 @@ function setPreviewStatus(status) {
 
   statusText.textContent = "Unsaved";
   banner.className = "status-banner status-unsaved";
-  banner.textContent = "Not yet saved. Review the STN and choose Save as Draft or Submit.";
+  banner.textContent = "Not yet saved. Save as Draft first to generate the STN number.";
 }
 
 function renderPreview() {
@@ -55,37 +64,44 @@ function renderPreview() {
   const linesBody = document.getElementById("previewLinesContainer");
 
   if (!draft) {
-    output.textContent = "No draft data found.";
+    if (output) output.textContent = "No draft data found.";
     return;
   }
 
+  const hasRealDraft = !!draft.stnId && draft.status === "Draft";
+
+  setText("pvStnNumber", draft.stnNumber || "-");
+  setText("pvStnSeqNo", draft.stnSeqNo || "-");
   setText("pvStnType", draft.stnType);
   setText("pvBusinessArea", draft.businessArea);
   setText("pvStnDate", draft.stnDate);
-  setPreviewStatus(draft.status || "Unsaved");
+  setPreviewStatus(draft.status || "Unsaved", hasRealDraft);
   setText("pvWarehouseFrom", warehouseDisplay(draft.warehouseFrom, draft.warehouseFromCustom));
   setText("pvWarehouseTo", warehouseDisplay(draft.warehouseTo, draft.warehouseToCustom));
   setText("pvCreatedBy", draft.createdBy);
   setText("pvCreatedByEmail", draft.createdByEmail);
   setText("pvRemarks", draft.remarks || "-");
 
-  linesBody.innerHTML = "";
+  togglePreviewActions(draft);
 
-  (draft.lines || []).forEach((line, index) => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td class="col-line">${index + 1}</td>
-      <td>${line.itemCode || ""}</td>
-      <td>${line.itemName || ""}</td>
-      <td>${line.uom || ""}</td>
-      <td>${line.batchNumber || ""}</td>
-      <td>${line.qty || ""}</td>
-      <td>${line.lineRemarks || ""}</td>
-    `;
-    linesBody.appendChild(tr);
-  });
+  if (linesBody) {
+    linesBody.innerHTML = "";
+    (draft.lines || []).forEach((line, index) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td class="col-line">${index + 1}</td>
+        <td>${line.itemCode || ""}</td>
+        <td>${line.itemName || ""}</td>
+        <td>${line.uom || ""}</td>
+        <td>${line.batchNumber || ""}</td>
+        <td>${line.qty || ""}</td>
+        <td>${line.lineRemarks || ""}</td>
+      `;
+      linesBody.appendChild(tr);
+    });
+  }
 
-  output.textContent = JSON.stringify(draft, null, 2);
+  if (output) output.textContent = JSON.stringify(draft, null, 2);
 }
 
 async function postDraftWithStatus(status) {
@@ -102,10 +118,13 @@ async function postDraftWithStatus(status) {
     status
   };
 
-  output.textContent = status === "Draft" ? "Saving draft..." : "Submitting STN...";
+  if (output) {
+    output.textContent = status === "Draft" ? "Saving draft..." : "Submitting STN...";
+  }
 
   const res = await fetch("/api/submitSTN", {
     method: "POST",
+    credentials: "include",
     headers: {
       "Content-Type": "application/json"
     },
@@ -118,11 +137,11 @@ async function postDraftWithStatus(status) {
   try {
     data = JSON.parse(text);
   } catch {
-    output.textContent = `Non-JSON response:\n${text}`;
+    if (output) output.textContent = `Non-JSON response:\n${text}`;
     return null;
   }
 
-  output.textContent = JSON.stringify(data, null, 2);
+  if (output) output.textContent = JSON.stringify(data, null, 2);
 
   if (!res.ok || !data.success) {
     alert(data.message || `${status} failed.`);
@@ -141,33 +160,42 @@ async function postDraftWithStatus(status) {
   return { api: data, draft: updatedDraft };
 }
 
-document.getElementById("backEntryBtn").addEventListener("click", () => {
+document.getElementById("backEntryBtn")?.addEventListener("click", () => {
   const draft = loadDraft();
   if (!draft) {
     window.location.href = "/dashboard.html";
     return;
   }
 
-  window.location.href = `/stn-entry.html?type=${encodeURIComponent(draft.stnType)}&area=${encodeURIComponent(draft.businessArea)}`;
+  window.location.href = `/stn-entry.html?type=${encodeURIComponent(draft.stnType)}&area=${encodeURIComponent(draft.businessArea)}${draft.stnId ? `&stnId=${encodeURIComponent(draft.stnId)}` : ""}`;
 });
 
-document.getElementById("saveDraftBtn").addEventListener("click", async () => {
+document.getElementById("saveDraftBtn")?.addEventListener("click", async () => {
   const result = await postDraftWithStatus("Draft");
   if (!result) return;
 
   renderPreview();
-  alert("Draft saved successfully.");
+  alert(`Draft saved successfully. STN No: ${result.api.stnSeqNo}`);
 });
 
-document.getElementById("submitPreviewBtn").addEventListener("click", async () => {
+document.getElementById("printDraftBtn")?.addEventListener("click", () => {
+  const draft = loadDraft();
+  if (!draft?.stnId || draft?.status !== "Draft") {
+    alert("Save as Draft first.");
+    return;
+  }
+  window.print();
+});
+
+document.getElementById("submitPreviewBtn")?.addEventListener("click", async () => {
   const draft = loadDraft();
 
-  if (!draft) {
-    alert("No draft found.");
+  if (!draft?.stnId || draft?.status !== "Draft") {
+    alert("Save as Draft first before submit.");
     return;
   }
 
-  const ok = window.confirm("Are you sure you want to submit this STN? This will be posted to the database.");
+  const ok = window.confirm("Are you sure you want to submit this STN?");
   if (!ok) return;
 
   const result = await postDraftWithStatus("Submitted");

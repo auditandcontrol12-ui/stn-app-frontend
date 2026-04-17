@@ -1,6 +1,7 @@
 const params = new URLSearchParams(window.location.search);
 const txnType = params.get("type") || "";
 const businessArea = params.get("area") || "";
+const stnIdFromUrl = params.get("stnId") || "";
 
 const output = document.getElementById("output");
 const linesContainer = document.getElementById("linesContainer");
@@ -82,6 +83,7 @@ function setEntryStatus(status) {
 
 function fillHeaderInfo() {
   const user = loadCurrentUser();
+  // const existingDraft = loadSavedDraft();
   const existingDraft = loadSavedDraft();
 
   const txnTypeEl = document.getElementById("txnType");
@@ -92,11 +94,12 @@ function fillHeaderInfo() {
 
   if (txnTypeEl) txnTypeEl.textContent = txnType;
   if (businessAreaEl) businessAreaEl.textContent = businessArea;
-  if (stnDateTextEl) stnDateTextEl.textContent = todayString();
-  if (createdByEl) createdByEl.textContent = user?.HoldingName || user?.UserName || "";
+  if (stnDateTextEl) stnDateTextEl.textContent = existingDraft?.stnDate || todayString();
+  if (createdByEl) createdByEl.textContent = user?.UserName || "";
   if (createdByEmailEl) createdByEmailEl.textContent = user?.UserEmail || "";
 
-  setEntryStatus(existingDraft?.status || "Unsaved");
+  // setEntryStatus(existingDraft?.status || "Unsaved");
+  setEntryStatus(existingDraft?.status || (stnIdFromUrl ? "Draft" : "Unsaved"));
 }
 
 function buildWarehouseOptions(selectEl) {
@@ -243,13 +246,13 @@ function collectFormData() {
     stnSeqNo: savedDraft?.stnSeqNo || null,
     stnType: txnType,
     businessArea,
-    stnDate: todayString(),
+    stnDate: savedDraft?.stnDate || todayString(),
     warehouseFrom: document.getElementById("warehouseFrom")?.value || "",
     warehouseTo: document.getElementById("warehouseTo")?.value || "",
     warehouseFromCustom: document.getElementById("warehouseFromCustom")?.value?.trim() || "",
     warehouseToCustom: document.getElementById("warehouseToCustom")?.value?.trim() || "",
     remarks: document.getElementById("remarks")?.value?.trim() || "",
-    createdBy: user?.HoldingName || user?.UserName || "",
+    createdBy: user?.UserName || "",
     createdByEmail: user?.UserEmail || "",
     status: savedDraft?.status === "Draft" ? "Draft" : "Unsaved",
     lines
@@ -314,6 +317,59 @@ function restoreDraftToForm(draft) {
   return true;
 }
 
+// function loadLookups() {
+//   return (async () => {
+//     try {
+//       if (!businessArea) {
+//         log("Business area missing in URL.");
+//         return;
+//       }
+
+//       log(`Loading lookups for ${businessArea}...`);
+
+//       const res = await fetch(`/api/getLookups?area=${encodeURIComponent(businessArea)}`, {
+//         credentials: "include"
+//       });
+//       const text = await res.text();
+
+//       let data;
+//       try {
+//         data = JSON.parse(text);
+//       } catch {
+//         log(`Non-JSON response:\n${text}`);
+//         return;
+//       }
+
+//       if (!data.success) {
+//         log("Lookup API returned failure.", data);
+//         return;
+//       }
+
+//       items = data.items || [];
+//       warehouses = data.warehouses || [];
+
+//       buildWarehouseOptions(document.getElementById("warehouseFrom"));
+//       buildWarehouseOptions(document.getElementById("warehouseTo"));
+
+//       const restored = restoreDraftToForm(loadSavedDraft());
+
+//       if (!restored) {
+//         addLineRow();
+//       }
+
+//       log("Lookups loaded successfully.", {
+//         success: true,
+//         itemCount: items.length,
+//         warehouseCount: warehouses.length,
+//         area: businessArea,
+//         restoredDraft: restored
+//       });
+//     } catch (err) {
+//       log(`Error while loading lookups: ${err.message}`);
+//     }
+//   })();
+// }
+
 function loadLookups() {
   return (async () => {
     try {
@@ -324,7 +380,9 @@ function loadLookups() {
 
       log(`Loading lookups for ${businessArea}...`);
 
-      const res = await fetch(`/api/getLookups?area=${encodeURIComponent(businessArea)}`);
+      const res = await fetch(`/api/getLookups?area=${encodeURIComponent(businessArea)}`, {
+        credentials: "include"
+      });
       const text = await res.text();
 
       let data;
@@ -346,7 +404,25 @@ function loadLookups() {
       buildWarehouseOptions(document.getElementById("warehouseFrom"));
       buildWarehouseOptions(document.getElementById("warehouseTo"));
 
-      const restored = restoreDraftToForm(loadSavedDraft());
+      let draftToRestore = null;
+      let restored = false;
+
+      if (stnIdFromUrl) {
+        try {
+          draftToRestore = await loadDraftFromDb(stnIdFromUrl);
+          localStorage.setItem("stnDraftData", JSON.stringify(draftToRestore));
+        } catch (err) {
+          log(`Failed to load STN from database: ${err.message}`);
+        }
+      }
+
+      if (!draftToRestore) {
+        draftToRestore = loadSavedDraft();
+      }
+
+      if (draftToRestore) {
+        restored = restoreDraftToForm(draftToRestore);
+      }
 
       if (!restored) {
         addLineRow();
@@ -357,7 +433,8 @@ function loadLookups() {
         itemCount: items.length,
         warehouseCount: warehouses.length,
         area: businessArea,
-        restoredDraft: restored
+        restoredDraft: restored,
+        stnIdFromUrl: stnIdFromUrl || null
       });
     } catch (err) {
       log(`Error while loading lookups: ${err.message}`);
@@ -418,7 +495,6 @@ function bindEvents() {
         return;
       }
 
-      data.status = loadSavedDraft()?.status === "Draft" ? "Draft" : "Unsaved";
       localStorage.setItem("stnDraftData", JSON.stringify(data));
       window.location.href = "/stn-preview.html";
     });
@@ -440,6 +516,54 @@ function init() {
     log(`Page init failed: ${err.message}`);
     console.error(err);
   }
+}
+
+async function loadDraftFromDb(stnId) {
+  const res = await fetch(`/api/getSTN?stnId=${encodeURIComponent(stnId)}`, {
+    credentials: "include"
+  });
+
+  const text = await res.text();
+
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    throw new Error(`Non-JSON response:\n${text}`);
+  }
+
+  if (!res.ok || !data.success) {
+    throw new Error(data.message || "Failed to load STN from database.");
+  }
+
+  const h = data.header;
+  const lines = data.lines || [];
+
+  return {
+    stnId: h.STNId,
+    stnNumber: h.STNNumber,
+    stnSeqNo: h.STNSeqNo,
+    stnType: h.STNType,
+    businessArea: h.BusinessArea,
+    stnDate: h.STNDate ? String(h.STNDate).slice(0, 10) : todayString(),
+    warehouseFrom: h.WarehouseFrom || "",
+    warehouseTo: h.WarehouseTo || "",
+    warehouseFromCustom: h.WarehouseFromCustom || "",
+    warehouseToCustom: h.WarehouseToCustom || "",
+    remarks: h.Remarks || "",
+    createdBy: h.CreatedBy || "",
+    createdByEmail: h.CreatedByEmail || "",
+    status: h.Status || "Draft",
+    lines: lines.map((line) => ({
+      lineNu: line.LineNu,
+      itemCode: line.ItemCode || "",
+      itemName: line.ItemName || "",
+      uom: line.UOM || "",
+      batchNumber: line.BatchNumber || "",
+      qty: line.Qty || "",
+      lineRemarks: line.LineRemarks || ""
+    }))
+  };
 }
 
 init();

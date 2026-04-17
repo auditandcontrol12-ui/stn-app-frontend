@@ -51,14 +51,39 @@
       </div>
 
       <div class="card soft">
-        <div class="section-title">Available Actions</div>
-        <div class="action-row">
-          <button id="postInboundBtn">Post Inbound</button>
-          <button id="postOutboundBtn">Post Outbound</button>
-          <button id="checkSTNBtn" class="success">Check STN</button>
-          <button id="logoutBtn" class="secondary">Logout</button>
-        </div>
-      </div>
+  <div class="section-title">Create STN</div>
+  <div class="action-row">
+    <button id="postInboundBtn">Post Inbound</button>
+    <button id="postOutboundBtn">Post Outbound</button>
+  </div>
+</div>
+
+<div class="card soft">
+  <div class="section-title">STN Workbench</div>
+  <div class="action-row">
+    <button id="checkSTNBtn" class="success">Check STN</button>
+    <button id="myDraftsBtn">My Drafts</button>
+    <button id="teamDraftsBtn" style="display:none;">Team Drafts</button>
+  </div>
+</div>
+
+<div class="card soft">
+  <div class="section-title">Stock Count</div>
+  <div class="action-row">
+    <button id="startStockCountBtn" disabled>Start Stock Count</button>
+    <button id="issueStockCountBtn" disabled style="display:none;">Issue Stock Count</button>
+  </div>
+  <div class="page-subtitle" style="margin-bottom:0;">Coming Soon</div>
+</div>
+
+<div class="card soft">
+  <div class="section-title">Reconcile</div>
+  <div class="action-row">
+    <button id="reconcileStockBtn" disabled>Reconcile Stock</button>
+    <button id="logoutBtn" class="secondary">Logout</button>
+  </div>
+  <div class="page-subtitle" style="margin-bottom:0;">Coming Soon</div>
+</div>
 
       <div class="card output-card">
         <pre id="output">Loading user access...</pre>

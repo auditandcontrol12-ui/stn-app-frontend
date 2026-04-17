@@ -1,5 +1,6 @@
 function setText(id, value) {
-  document.getElementById(id).textContent = value ?? "";
+  const el = document.getElementById(id);
+  if (el) el.textContent = value ?? "";
 }
 
 let currentUser = null;
@@ -13,12 +14,14 @@ function saveSelectedArea(area) {
   selectedArea = area;
   localStorage.setItem("selectedArea", area);
   refreshSelectedArea();
+  renderBusinessAreaButtons();
 }
 
 function clearSelectedArea() {
   selectedArea = "";
   localStorage.removeItem("selectedArea");
   refreshSelectedArea();
+  renderBusinessAreaButtons();
 }
 
 function saveCurrentUser() {
@@ -29,25 +32,46 @@ function saveCurrentUser() {
   }
 }
 
+function makeAreaButton(label, isAllowed) {
+  const btn = document.createElement("button");
+  btn.textContent = label;
+
+  if (selectedArea === label) {
+    btn.classList.add("success");
+  }
+
+  btn.disabled = !isAllowed;
+
+  btn.addEventListener("click", () => {
+    if (!isAllowed) return;
+    saveSelectedArea(label);
+  });
+
+  return btn;
+}
+
 function renderBusinessAreaButtons() {
   const container = document.getElementById("businessAreaButtons");
+  if (!container) return;
+
   container.innerHTML = "";
 
   if (!currentUser) return;
 
-  if (currentUser.IsAllowedManufacturing) {
-    const btn = document.createElement("button");
-    btn.textContent = "Manufacturing";
-    btn.addEventListener("click", () => saveSelectedArea("Manufacturing"));
-    container.appendChild(btn);
-  }
+  container.appendChild(
+    makeAreaButton("Manufacturing", !!currentUser.IsAllowedManufacturing)
+  );
 
-  if (currentUser.IsAllowedDistribution) {
-    const btn = document.createElement("button");
-    btn.textContent = "Distribution";
-    btn.addEventListener("click", () => saveSelectedArea("Distribution"));
-    container.appendChild(btn);
-  }
+  container.appendChild(
+    makeAreaButton("Distribution", !!currentUser.IsAllowedDistribution)
+  );
+}
+
+function renderManagerActions() {
+  const teamDraftsBtn = document.getElementById("teamDraftsBtn");
+  if (!teamDraftsBtn) return;
+
+  teamDraftsBtn.style.display = currentUser?.IsManager ? "inline-block" : "none";
 }
 
 function canUseSelectedArea() {
@@ -78,22 +102,25 @@ async function loadUserAccess() {
   const output = document.getElementById("output");
 
   try {
-    output.textContent = "Loading user access...";
+    if (output) output.textContent = "Loading user access...";
 
-    const res = await fetch("/api/getUserAccess", { credentials: "include" });
+    const res = await fetch("/api/getUserAccess", {
+      credentials: "include"
+    });
+
     const text = await res.text();
 
     let data;
     try {
       data = JSON.parse(text);
     } catch {
-      output.textContent = `Non-JSON response:\n${text}`;
+      if (output) output.textContent = `Non-JSON response:\n${text}`;
       return;
     }
 
-    output.textContent = JSON.stringify(data, null, 2);
+    if (output) output.textContent = JSON.stringify(data, null, 2);
 
-    if (!data.success) {
+    if (!data.success || !data.data) {
       localStorage.removeItem("stnCurrentUser");
       localStorage.removeItem("selectedArea");
       window.location.href = "/no-access.html";
@@ -123,37 +150,51 @@ async function loadUserAccess() {
     }
 
     renderBusinessAreaButtons();
+    renderManagerActions();
     refreshSelectedArea();
   } catch (err) {
-    output.textContent = `Error: ${err.message}`;
+    if (output) output.textContent = `Error: ${err.message}`;
   }
 }
 
-document.getElementById("postInboundBtn").addEventListener("click", () => {
+document.getElementById("postInboundBtn")?.addEventListener("click", () => {
   if (!canUseSelectedArea()) return;
   window.location.href = `/stn-entry.html?type=IN&area=${encodeURIComponent(selectedArea)}`;
 });
 
-document.getElementById("postOutboundBtn").addEventListener("click", () => {
+document.getElementById("postOutboundBtn")?.addEventListener("click", () => {
   if (!canUseSelectedArea()) return;
   window.location.href = `/stn-entry.html?type=OB&area=${encodeURIComponent(selectedArea)}`;
 });
 
-document.getElementById("checkSTNBtn").addEventListener("click", () => {
+document.getElementById("checkSTNBtn")?.addEventListener("click", () => {
   window.location.href = "/check-stn.html";
 });
 
-document.getElementById("logoutBtn").addEventListener("click", async () => {
-  await fetch("/api/logout", {
-    method: "POST",
-    credentials: "include"
-  });
+document.getElementById("myDraftsBtn")?.addEventListener("click", () => {
+  window.location.href = "/my-drafts.html";
+});
+
+document.getElementById("teamDraftsBtn")?.addEventListener("click", () => {
+  window.location.href = "/team-drafts.html";
+});
+
+document.getElementById("logoutBtn")?.addEventListener("click", async () => {
+  try {
+    await fetch("/api/logout", {
+      method: "POST",
+      credentials: "include",
+      cache: "no-store"
+    });
+  } catch {}
 
   localStorage.removeItem("stnCurrentUser");
   localStorage.removeItem("selectedArea");
+  localStorage.removeItem("stnDraftData");
+  localStorage.removeItem("stnLastSubmitted");
   sessionStorage.removeItem("login_email");
 
-  window.location.href = "/";
+  window.location.replace("/?logged_out=1");
 });
 
 refreshSelectedArea();

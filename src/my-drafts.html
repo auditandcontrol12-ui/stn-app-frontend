@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Drafts</title>
+  <link rel="stylesheet" href="/css/app.css" />
+</head>
+<body>
+  <div class="container">
+    <div class="top-hero">
+      <div>
+        <span class="hero-badge">Draft Worklist</span>
+        <h1>My Drafts</h1>
+        <div class="page-subtitle">
+          View, reopen, print, and continue your draft STNs.
+        </div>
+      </div>
+    </div>
+
+    <div class="page-shell">
+      <div class="card">
+        <div class="section-title">Filters</div>
+        <div class="form-grid search-grid">
+          <div class="field-block">
+            <label for="myDraftArea">Business Area</label>
+            <select id="myDraftArea">
+              <option value="">All</option>
+              <option value="Manufacturing">Manufacturing</option>
+              <option value="Distribution">Distribution</option>
+            </select>
+          </div>
+        </div>
+        <div class="action-row">
+          <button id="refreshMyDraftsBtn">Refresh</button>
+          <button id="backDashboardBtn" class="secondary">Back to Dashboard</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">Draft List</div>
+        <div class="lines-table-wrap">
+          <table class="lines-table">
+            <thead>
+              <tr>
+                <th>STN Seq</th>
+                <th>STN Number</th>
+                <th>Type</th>
+                <th>Area</th>
+                <th>Date</th>
+                <th>Warehouse From</th>
+                <th>Warehouse To</th>
+                <th>Lines</th>
+                <th>Last Activity</th>
+                <th class="col-actions">Action</th>
+              </tr>
+            </thead>
+            <tbody id="myDraftsContainer"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card output-card">
+        <pre id="myDraftsOutput">Loading drafts...</pre>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/my-drafts.js"></script>
+</body>
+</html>

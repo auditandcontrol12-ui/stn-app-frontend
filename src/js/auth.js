@@ -11,7 +11,7 @@ async function requireAuth() {
 
   const data = await res.json();
 
-  if (!data.authenticated) {
+  if (!data.authenticated || !data.user) {
     window.location.href = "/login.html";
     return null;
   }

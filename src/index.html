@@ -88,23 +88,30 @@
   </div>
 
   <script>
-    (async () => {
-      try {
-        const res = await fetch("/api/getMe", {
-          method: "GET",
-          credentials: "include"
-        });
+  (async () => {
+    try {
+      const params = new URLSearchParams(window.location.search);
 
-        if (res.ok) {
-          const data = await res.json();
-          if (data.authenticated) {
-            window.location.href = "/dashboard.html";
-          }
-        }
-      } catch (e) {
+      if (params.get("logged_out") === "1") {
+        return;
       }
-    })();
-  </script>
+
+      const res = await fetch("/api/getMe", {
+        method: "GET",
+        credentials: "include",
+        cache: "no-store"
+      });
+
+      if (!res.ok) return;
+
+      const data = await res.json();
+      if (data.authenticated) {
+        window.location.replace("/dashboard.html");
+      }
+    } catch (e) {
+    }
+  })();
+</script>
   <script src="/js/login.js"></script>
 </body>
 </html>

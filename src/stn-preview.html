@@ -13,7 +13,7 @@
         <span class="hero-badge">Document Preview</span>
         <h1>STN Preview</h1>
         <div class="page-subtitle">
-          Review the STN before final submit.
+          Review the STN, save draft, print draft, and submit later.
         </div>
       </div>
     </div>
@@ -22,13 +22,21 @@
       <div class="card status-card">
         <div class="section-title">Document Status</div>
         <div id="previewStatusBanner" class="status-banner status-unsaved">
-          Not yet saved. Review the STN and choose Save as Draft or Submit.
+          Not yet saved. Save as Draft first to generate the STN number.
         </div>
       </div>
 
       <div class="card">
         <div class="section-title">Document Summary</div>
         <div class="summary-grid">
+          <div class="summary-item">
+            <div class="label">STN Number</div>
+            <div class="value" id="pvStnNumber">-</div>
+          </div>
+          <div class="summary-item">
+            <div class="label">STN Seq No</div>
+            <div class="value" id="pvStnSeqNo">-</div>
+          </div>
           <div class="summary-item">
             <div class="label">STN Type</div>
             <div class="value" id="pvStnType"></div>
@@ -93,7 +101,8 @@
         <div class="action-row">
           <button id="backEntryBtn" class="secondary">Back to Entry</button>
           <button id="saveDraftBtn">Save as Draft</button>
-          <button id="submitPreviewBtn" class="success">Submit</button>
+          <button id="printDraftBtn" style="display:none;">Print Draft</button>
+          <button id="submitPreviewBtn" class="success" style="display:none;">Submit</button>
         </div>
       </div>
 
