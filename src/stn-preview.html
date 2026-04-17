@@ -7,8 +7,8 @@
   <link rel="stylesheet" href="/css/app.css" />
 </head>
 <body>
-  <div class="container">
-    <div class="top-hero">
+  <div class="container print-shell">
+    <div class="top-hero no-print">
       <div>
         <span class="hero-badge">Document Preview</span>
         <h1>STN Preview</h1>
@@ -18,17 +18,34 @@
       </div>
     </div>
 
-    <div class="page-shell">
-      <div class="card status-card">
-        <div class="section-title">Document Status</div>
-        <div id="previewStatusBanner" class="status-banner status-unsaved">
-          Not yet saved. Save as Draft first to generate the STN number.
+    <div class="card status-card no-print">
+      <div class="section-title">Document Status</div>
+      <div id="previewStatusBanner" class="status-banner status-unsaved">
+        Not yet saved. Save as Draft first to generate the STN number.
+      </div>
+    </div>
+
+    <div class="print-header print-only-block">
+      <div class="print-header-left">
+        <img src="/assets/PrintLogo.jpeg" alt="Print Logo" class="print-logo" />
+      </div>
+      <div class="print-header-center">
+        <div class="print-org">Business Data and Internal Control</div>
+        <div class="print-title" id="draftPrintTitle">Draft Stock Transfer Note</div>
+        <div class="print-subtitle">Official Internal Document</div>
+      </div>
+      <div class="print-header-right">
+        <div class="print-doc-meta">
+          <div><strong>STN No:</strong> <span id="draftPrintStnNumber"></span></div>
+          <div><strong>Status:</strong> <span id="draftPrintStatus"></span></div>
         </div>
       </div>
+    </div>
 
-      <div class="card">
+    <div class="page-shell">
+      <div class="card print-card">
         <div class="section-title">Document Summary</div>
-        <div class="summary-grid">
+        <div class="summary-grid print-summary-grid">
           <div class="summary-item">
             <div class="label">STN Number</div>
             <div class="value" id="pvStnNumber">-</div>
@@ -72,15 +89,15 @@
         </div>
       </div>
 
-      <div class="card">
+      <div class="card print-card">
         <div class="section-title">Remarks</div>
         <div id="pvRemarks" class="info-banner"></div>
       </div>
 
-      <div class="card">
+      <div class="card print-card">
         <div class="section-title">Line Preview</div>
-        <div class="lines-table-wrap">
-          <table class="lines-table">
+        <div class="lines-table-wrap print-lines-wrap">
+          <table class="lines-table print-lines-table">
             <thead>
               <tr>
                 <th class="col-line">Line</th>
@@ -97,7 +114,22 @@
         </div>
       </div>
 
-      <div class="card soft">
+      <div class="card print-card print-only-block">
+        <div class="print-signatures">
+          <div class="print-sign-box">
+            <div class="print-sign-label">Prepared By</div>
+            <div class="print-sign-line"></div>
+            <div class="print-sign-name" id="draftPrintPreparedBy"></div>
+          </div>
+          <div class="print-sign-box">
+            <div class="print-sign-label">Authorized Sign</div>
+            <div class="print-sign-line"></div>
+            <div class="print-sign-name">Sign</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card soft no-print">
         <div class="action-row">
           <button id="backEntryBtn" class="secondary">Back to Entry</button>
           <button id="saveDraftBtn">Save as Draft</button>
@@ -106,7 +138,7 @@
         </div>
       </div>
 
-      <div class="card output-card">
+      <div class="card output-card no-print">
         <pre id="previewOutput">Waiting...</pre>
       </div>
     </div>
@@ -114,4 +146,4 @@
 
   <script src="/js/stn-preview.js"></script>
 </body>
-</html>
+</html> 

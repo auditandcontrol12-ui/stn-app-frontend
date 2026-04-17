@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reconcile Stock</title>
+  <link rel="stylesheet" href="/css/app.css" />
+</head>
+<body>
+  <div class="container">
+    <div class="top-hero">
+      <div>
+        <span class="hero-badge">Reconcile</span>
+        <h1>Reconcile Stock</h1>
+        <div class="page-subtitle">
+          Select date range and warehouse, then generate stock reconciliation preview.
+        </div>
+      </div>
+    </div>
+
+    <div class="page-shell">
+      <div class="card">
+        <div class="section-title">Reconcile Filters</div>
+
+        <div class="summary-grid">
+          <div class="summary-item">
+            <div class="label">Selected Area</div>
+            <div class="value" id="reconcileBusinessArea">-</div>
+          </div>
+        </div>
+
+        <div class="form-grid" style="margin-top:18px;">
+          <div class="field-block">
+            <label for="reconcileStartDate">Start Date</label>
+            <input id="reconcileStartDate" type="date" />
+          </div>
+
+          <div class="field-block">
+            <label for="reconcileEndDate">End Date</label>
+            <input id="reconcileEndDate" type="date" />
+          </div>
+
+          <div class="field-block">
+            <label for="reconcileWarehouse">Warehouse</label>
+            <select id="reconcileWarehouse"></select>
+          </div>
+        </div>
+      </div>
+
+      <div class="card soft">
+        <div class="action-row">
+          <button id="generateReconcileBtn">Generate Preview</button>
+          <button id="backDashboardBtn" class="secondary">Back to Dashboard</button>
+        </div>
+      </div>
+
+      <div class="card output-card">
+        <pre id="reconcileOutput">Loading lookups...</pre>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/reconcile-stock.js"></script>
+</body>
+</html>

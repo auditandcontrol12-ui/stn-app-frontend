@@ -179,6 +179,16 @@ document.getElementById("teamDraftsBtn")?.addEventListener("click", () => {
   window.location.href = "/team-drafts.html";
 });
 
+document.getElementById("reconcileStockBtn")?.addEventListener("click", () => {
+  if (!canUseSelectedArea()) return;
+  window.location.href = "/reconcile-stock.html";
+});
+
+document.getElementById("startStockCountBtn")?.addEventListener("click", () => {
+  if (!canUseSelectedArea()) return;
+  window.location.href = "/start-stock-count.html";
+});
+
 document.getElementById("logoutBtn")?.addEventListener("click", async () => {
   try {
     await fetch("/api/logout", {

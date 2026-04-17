@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reconcile Preview</title>
+  <link rel="stylesheet" href="/css/app.css" />
+</head>
+<body>
+  <div class="container print-shell">
+    <div class="top-hero no-print">
+      <div>
+        <span class="hero-badge">Reconcile Preview</span>
+        <h1>Stock Reconciliation Preview</h1>
+        <div class="page-subtitle">
+          Review and print the reconciliation result.
+        </div>
+      </div>
+    </div>
+
+    <div class="print-header print-only-block">
+      <div class="print-header-left">
+        <img src="/assets/PrintLogo.jpeg" alt="Print Logo" class="print-logo" />
+      </div>
+      <div class="print-header-center">
+        <div class="print-org">Business Data and Internal Control</div>
+        <div class="print-title">Stock Reconciliation</div>
+        <div class="print-subtitle">Official Internal Document</div>
+      </div>
+      <div class="print-header-right">
+        <div class="print-doc-meta">
+          <div><strong>Warehouse:</strong> <span id="rcPrintWarehouse"></span></div>
+          <div><strong>Area:</strong> <span id="rcPrintArea"></span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-shell">
+      <div class="card print-card">
+        <div class="section-title">Summary</div>
+        <div class="summary-grid print-summary-grid">
+          <div class="summary-item">
+            <div class="label">Business Area</div>
+            <div class="value" id="rcArea"></div>
+          </div>
+          <div class="summary-item">
+            <div class="label">Warehouse</div>
+            <div class="value" id="rcWarehouse"></div>
+          </div>
+          <div class="summary-item">
+            <div class="label">Start Date</div>
+            <div class="value" id="rcStartDate"></div>
+          </div>
+          <div class="summary-item">
+            <div class="label">End Date</div>
+            <div class="value" id="rcEndDate"></div>
+          </div>
+          <div class="summary-item">
+            <div class="label">Type</div>
+            <div class="value" id="rcType"></div>
+          </div>
+          <div class="summary-item">
+            <div class="label">Row Count</div>
+            <div class="value" id="rcRowCount"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card print-card">
+        <div class="section-title">Reconciliation Lines</div>
+        <div class="lines-table-wrap print-lines-wrap">
+          <table class="lines-table print-lines-table">
+            <thead>
+              <tr>
+                <th>Item Code</th>
+                <th>Item Name</th>
+                <th>UOM</th>
+                <th>Batch Number</th>
+                <th>In Qty</th>
+                <th>Out Qty</th>
+                <th>Net Qty</th>
+              </tr>
+            </thead>
+            <tbody id="reconcileLinesContainer"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card soft no-print">
+        <div class="action-row">
+          <button id="backReconcileBtn" class="secondary">Back</button>
+          <button id="printReconcileBtn" class="success">Print / Save PDF</button>
+        </div>
+      </div>
+
+      <div class="card output-card no-print">
+        <pre id="reconcilePreviewOutput">Waiting...</pre>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/reconcile-preview.js"></script>
+</body>
+</html>

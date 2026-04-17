@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stock Count Sheet</title>
+  <link rel="stylesheet" href="/css/app.css" />
+</head>
+<body>
+  <div class="container">
+    <div class="top-hero">
+      <div>
+        <span class="hero-badge">Stock Count</span>
+        <h1>Count Sheet</h1>
+        <div class="page-subtitle">
+          Enter physical counted stock. System quantity is hidden at this stage.
+        </div>
+      </div>
+    </div>
+
+    <div class="page-shell">
+      <div class="card">
+        <div class="section-title">Count Summary</div>
+        <div class="summary-grid">
+          <div class="summary-item">
+            <div class="label">Count Number</div>
+            <div class="value" id="schCountNumber"></div>
+          </div>
+          <div class="summary-item">
+            <div class="label">Warehouse</div>
+            <div class="value" id="schWarehouse"></div>
+          </div>
+          <div class="summary-item">
+            <div class="label">Area</div>
+            <div class="value" id="schArea"></div>
+          </div>
+          <div class="summary-item">
+            <div class="label">Status</div>
+            <div class="value" id="schStatus"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">Count Entry</div>
+        <div class="lines-table-wrap">
+          <table class="lines-table">
+            <thead>
+              <tr>
+                <th class="col-line">Line</th>
+                <th>Item Code</th>
+                <th>Item Name</th>
+                <th>UOM</th>
+                <th>Batch Number</th>
+                <th>Counted Qty</th>
+              </tr>
+            </thead>
+            <tbody id="stockCountSheetLines"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card soft">
+        <div class="action-row">
+          <button id="submitStockCountBtn" class="success">Submit Stock Count</button>
+          <button id="backDashboardBtn" class="secondary">Back to Dashboard</button>
+        </div>
+      </div>
+
+      <div class="card output-card">
+        <pre id="stockCountSheetOutput">Loading stock count...</pre>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/stock-count-sheet.js"></script>
+</body>
+</html>

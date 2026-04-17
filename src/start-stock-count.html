@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Start Stock Count</title>
+  <link rel="stylesheet" href="/css/app.css" />
+</head>
+<body>
+  <div class="container">
+    <div class="top-hero">
+      <div>
+        <span class="hero-badge">Stock Count</span>
+        <h1>Start Stock Count</h1>
+        <div class="page-subtitle">
+          Select warehouse and up to 10 item-batch lines to start a count.
+        </div>
+      </div>
+    </div>
+
+    <div class="page-shell">
+      <div class="card">
+        <div class="section-title">Count Header</div>
+
+        <div class="summary-grid">
+          <div class="summary-item">
+            <div class="label">Selected Area</div>
+            <div class="value" id="scBusinessArea">-</div>
+          </div>
+        </div>
+
+        <div class="form-grid" style="margin-top:18px;">
+          <div class="field-block">
+            <label for="scWarehouse">Warehouse</label>
+            <select id="scWarehouse"></select>
+          </div>
+
+          <div class="field-block">
+            <label for="scRemarks">Remarks</label>
+            <textarea id="scRemarks" rows="3"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="line-toolbar">
+          <div>
+            <div class="section-title" style="margin-bottom:4px;">Count Lines</div>
+            <p>Select up to 10 item and batch combinations.</p>
+          </div>
+          <button id="addCountLineBtn" class="success">Add Line</button>
+        </div>
+
+        <div class="lines-table-wrap">
+          <table class="lines-table">
+            <thead>
+              <tr>
+                <th class="col-line">Line</th>
+                <th>Item</th>
+                <th>Item Name</th>
+                <th>UOM</th>
+                <th>Batch</th>
+                <th class="col-actions">Action</th>
+              </tr>
+            </thead>
+            <tbody id="stockCountLinesContainer"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card soft">
+        <div class="action-row">
+          <button id="startStockCountBtn">Start Stock Count</button>
+          <button id="backDashboardBtn" class="secondary">Back to Dashboard</button>
+        </div>
+      </div>
+
+      <div class="card output-card">
+        <pre id="stockCountOutput">Loading lookups...</pre>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/start-stock-count.js"></script>
+</body>
+</html>

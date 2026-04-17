@@ -82,6 +82,17 @@ function renderPreview() {
   setText("pvCreatedByEmail", draft.createdByEmail);
   setText("pvRemarks", draft.remarks || "-");
 
+  setText("draftPrintTitle", "Draft Stock Transfer Note");
+  setText("draftPrintStnNumber", draft.stnNumber || "-");
+  setText("draftPrintStatus", draft.status || "Draft");
+  setText("draftPrintPreparedBy", draft.createdBy || "");
+
+  if (draft.stnNumber) {
+    document.title = `Draft - ${draft.stnNumber}`;
+  } else {
+    document.title = "Draft - STN Preview";
+  }
+
   togglePreviewActions(draft);
 
   if (linesBody) {
@@ -184,6 +195,7 @@ document.getElementById("printDraftBtn")?.addEventListener("click", () => {
     alert("Save as Draft first.");
     return;
   }
+  document.title = `Draft - ${draft.stnNumber || "STN"}`;
   window.print();
 });
 
