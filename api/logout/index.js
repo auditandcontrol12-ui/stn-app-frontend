@@ -3,7 +3,7 @@ const { getPool, sql } = require("../shared/db");
 const { readCookie, buildLogoutCookie } = require("../shared/session");
 
 app.http("logout", {
-  methods: ["POST", "GET"],
+  methods: ["POST"],
   authLevel: "anonymous",
   handler: async (request, context) => {
     try {
@@ -16,19 +16,25 @@ app.http("logout", {
         await pool.request()
           .input("SessionID", sql.UniqueIdentifier, sessionId)
           .query(`
-            UPDATE app.UserSession
-            SET IsRevoked = 1
-            WHERE SessionID = @SessionID
+            UPDATE STNAPP.UserSession
+            SET
+                IsRevoked = 1,
+                LastAccessOn = SYSUTCDATETIME()
+            WHERE SessionID = @SessionID;
           `);
       }
 
       return {
         status: 200,
         headers: {
-          "Set-Cookie": buildLogoutCookie()
+          "Set-Cookie": buildLogoutCookie(),
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+          "Pragma": "no-cache",
+          "Expires": "0"
         },
         jsonBody: {
-          success: true
+          success: true,
+          message: "Logged out successfully."
         }
       };
     } catch (error) {
@@ -36,9 +42,12 @@ app.http("logout", {
 
       return {
         status: 500,
+        headers: {
+          "Set-Cookie": buildLogoutCookie()
+        },
         jsonBody: {
           success: false,
-          message: "Internal server error."
+          message: error.message || "Logout failed."
         }
       };
     }

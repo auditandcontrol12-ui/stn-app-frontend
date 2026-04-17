@@ -22,7 +22,7 @@ app.http("getUserAccess", {
 
       const pool = await getPool();
 
-      const sessionResult = await pool.request()
+      const result = await pool.request()
         .input("SessionID", sql.UniqueIdentifier, sessionId)
         .query(`
           SELECT TOP 1
@@ -31,14 +31,21 @@ app.http("getUserAccess", {
               s.IsRevoked,
               u.UserID,
               u.UserEmail,
-              u.IsActive
-          FROM app.UserSession s
-          INNER JOIN app.Users u
+              u.UserName,
+              u.HoldingName,
+              u.UserRole,
+              u.IsAllowedManufacturing,
+              u.IsAllowedDistribution,
+              u.IsManager,
+              u.IsActive,
+              u.IsDeleted
+          FROM STNAPP.UserSession s
+          INNER JOIN STNAPP.Users u
               ON s.UserID = u.UserID
-          WHERE s.SessionID = @SessionID
+          WHERE s.SessionID = @SessionID;
         `);
 
-      if (sessionResult.recordset.length === 0) {
+      if (result.recordset.length === 0) {
         return {
           status: 401,
           jsonBody: {
@@ -48,12 +55,13 @@ app.http("getUserAccess", {
         };
       }
 
-      const sessionRow = sessionResult.recordset[0];
+      const row = result.recordset[0];
 
       if (
-        sessionRow.IsRevoked ||
-        !sessionRow.IsActive ||
-        new Date(sessionRow.ExpiresOn) < new Date()
+        row.IsRevoked ||
+        !row.IsActive ||
+        row.IsDeleted ||
+        new Date(row.ExpiresOn) < new Date()
       ) {
         return {
           status: 401,
@@ -67,56 +75,26 @@ app.http("getUserAccess", {
       await pool.request()
         .input("SessionID", sql.UniqueIdentifier, sessionId)
         .query(`
-          UPDATE app.UserSession
+          UPDATE STNAPP.UserSession
           SET LastAccessOn = SYSUTCDATETIME()
-          WHERE SessionID = @SessionID
+          WHERE SessionID = @SessionID;
         `);
-
-      const accessResult = await pool.request()
-        .input("UserEmail", sql.NVarChar(510), sessionRow.UserEmail)
-        .query(`
-          SELECT TOP 1
-              UserEmail,
-              UserName,
-              HoldingName,
-              UserRole,
-              IsAllowedManufacturing,
-              IsAllowedDistribution,
-              IsManager,
-              IsActive
-          FROM app.STNUserAccess
-          WHERE UserEmail = @UserEmail
-        `);
-
-      if (accessResult.recordset.length === 0) {
-        return {
-          status: 403,
-          jsonBody: {
-            success: false,
-            message: "User is not allowed.",
-            userEmail: sessionRow.UserEmail
-          }
-        };
-      }
-
-      const row = accessResult.recordset[0];
-
-      if (!row.IsActive) {
-        return {
-          status: 403,
-          jsonBody: {
-            success: false,
-            message: "User is inactive.",
-            userEmail: sessionRow.UserEmail
-          }
-        };
-      }
 
       return {
         status: 200,
         jsonBody: {
           success: true,
-          data: row
+          data: {
+            UserID: row.UserID,
+            UserEmail: row.UserEmail,
+            UserName: row.UserName,
+            HoldingName: row.HoldingName,
+            UserRole: row.UserRole,
+            IsAllowedManufacturing: row.IsAllowedManufacturing,
+            IsAllowedDistribution: row.IsAllowedDistribution,
+            IsManager: row.IsManager,
+            IsActive: row.IsActive
+          }
         }
       };
     } catch (error) {

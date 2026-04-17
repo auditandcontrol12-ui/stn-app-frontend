@@ -32,7 +32,7 @@ function buildLogoutCookie() {
 // function buildLogoutCookie() {
 //   const cookieName = process.env.SESSION_COOKIE_NAME || "stn_session";
 //   const isLocal = (process.env.NODE_ENV || "").toLowerCase() === "development";
-//   return `${cookieName}=; Path=/; HttpOnly; SameSite=Lax${isLocal ? "" : "; Secure"}; Expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+//   return `${cookieName}=; Path=/; HttpOnly; SameSite=Lax${isLocal ? "" : "; Secure"}; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0`;
 // }
 
 function readCookie(request, cookieName) {

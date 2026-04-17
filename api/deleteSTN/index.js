@@ -2,7 +2,7 @@ const { app } = require("@azure/functions");
 const { getPool, sql } = require("../shared/db");
 const { readCookie } = require("../shared/session");
 
-async function getManagerAccess(pool, sessionId) {
+async function getSessionUser(pool, sessionId) {
   const result = await pool.request()
     .input("SessionID", sql.UniqueIdentifier, sessionId)
     .query(`
@@ -10,24 +10,30 @@ async function getManagerAccess(pool, sessionId) {
           s.SessionID,
           s.ExpiresOn,
           s.IsRevoked,
+          u.UserID,
           u.UserEmail,
-          a.IsAllowedManufacturing,
-          a.IsAllowedDistribution,
-          a.IsManager,
-          a.IsActive
-      FROM app.UserSession s
-      INNER JOIN app.Users u
+          u.UserName,
+          u.IsAllowedManufacturing,
+          u.IsAllowedDistribution,
+          u.IsManager,
+          u.IsActive,
+          u.IsDeleted
+      FROM STNAPP.UserSession s
+      INNER JOIN STNAPP.Users u
           ON s.UserID = u.UserID
-      INNER JOIN app.STNUserAccess a
-          ON a.UserEmail = u.UserEmail
-      WHERE s.SessionID = @SessionID
+      WHERE s.SessionID = @SessionID;
     `);
 
   if (result.recordset.length === 0) return null;
 
   const row = result.recordset[0];
 
-  if (row.IsRevoked || !row.IsActive || new Date(row.ExpiresOn) < new Date()) {
+  if (
+    row.IsRevoked ||
+    !row.IsActive ||
+    row.IsDeleted ||
+    new Date(row.ExpiresOn) < new Date()
+  ) {
     return null;
   }
 
@@ -38,8 +44,7 @@ app.http("deleteSTN", {
   methods: ["POST"],
   authLevel: "anonymous",
   handler: async (request, context) => {
-    const pool = await getPool();
-    const transaction = new sql.Transaction(pool);
+    let transaction;
 
     try {
       const cookieName = process.env.SESSION_COOKIE_NAME || "stn_session";
@@ -47,37 +52,42 @@ app.http("deleteSTN", {
 
       if (!sessionId) {
         return {
-          status: 403,
-          jsonBody: { success: false, message: "Not authorized." }
+          status: 401,
+          jsonBody: { success: false, message: "Unauthorized." }
         };
       }
 
-      const access = await getManagerAccess(pool, sessionId);
+      const pool = await getPool();
+      const sessionUser = await getSessionUser(pool, sessionId);
 
-      if (!access || !access.IsManager) {
+      if (!sessionUser) {
         return {
-          status: 403,
-          jsonBody: { success: false, message: "Manager access required." }
+          status: 401,
+          jsonBody: { success: false, message: "Unauthorized." }
         };
       }
 
       const body = await request.json();
-      const stnId = body?.stnId;
+      const stnId = Number(body?.stnId);
 
-      if (!stnId) {
+      if (!stnId || Number.isNaN(stnId)) {
         return {
           status: 400,
-          jsonBody: { success: false, message: "stnId is required." }
+          jsonBody: { success: false, message: "Valid stnId is required." }
         };
       }
 
       const headerResult = await pool.request()
-        .input("STNId", sql.BigInt, Number(stnId))
+        .input("STNId", sql.BigInt, stnId)
         .query(`
           SELECT TOP 1
               STNId,
-              BusinessArea
-          FROM app.STNHeader
+              STNNumber,
+              BusinessArea,
+              Status,
+              CreatedByEmail,
+              IsDeleted
+          FROM STNAPP.STNHeader
           WHERE STNId = @STNId;
         `);
 
@@ -90,24 +100,70 @@ app.http("deleteSTN", {
 
       const header = headerResult.recordset[0];
 
-      if (
-        (header.BusinessArea === "Manufacturing" && !access.IsAllowedManufacturing) ||
-        (header.BusinessArea === "Distribution" && !access.IsAllowedDistribution)
-      ) {
+      if (header.IsDeleted) {
         return {
-          status: 404,
-          jsonBody: { success: false, message: "STN not found." }
+          status: 400,
+          jsonBody: { success: false, message: "STN already deleted." }
         };
       }
 
+      const isCreator =
+        (sessionUser.UserEmail || "").toLowerCase() ===
+        (header.CreatedByEmail || "").toLowerCase();
+
+      const isManager = !!sessionUser.IsManager;
+
+      if (
+        (header.BusinessArea === "Manufacturing" && !sessionUser.IsAllowedManufacturing) ||
+        (header.BusinessArea === "Distribution" && !sessionUser.IsAllowedDistribution)
+      ) {
+        return {
+          status: 403,
+          jsonBody: { success: false, message: "Access denied for this business area." }
+        };
+      }
+
+      if (header.Status === "Draft") {
+        if (!isCreator && !isManager) {
+          return {
+            status: 403,
+            jsonBody: { success: false, message: "Only the draft creator or a manager can delete this draft." }
+          };
+        }
+      } else if (header.Status === "Submitted") {
+        if (!isManager) {
+          return {
+            status: 403,
+            jsonBody: { success: false, message: "Only a manager can delete a submitted STN." }
+          };
+        }
+      } else {
+        return {
+          status: 400,
+          jsonBody: { success: false, message: `Delete is not allowed for status ${header.Status}.` }
+        };
+      }
+
+      transaction = new sql.Transaction(pool);
       await transaction.begin();
 
       await new sql.Request(transaction)
-        .input("STNId", sql.BigInt, Number(stnId))
+        .input("STNId", sql.BigInt, stnId)
+        .input("DeletedBy", sql.NVarChar(800), sessionUser.UserName || "")
+        .input("DeletedByEmail", sql.NVarChar(1020), sessionUser.UserEmail || "")
         .query(`
-          DELETE FROM app.STNPrintLog WHERE STNId = @STNId;
-          DELETE FROM app.STNLine WHERE STNId = @STNId;
-          DELETE FROM app.STNHeader WHERE STNId = @STNId;
+          UPDATE STNAPP.STNHeader
+          SET
+              Status = 'Deleted',
+              IsDeleted = 1,
+              DeletedBy = @DeletedBy,
+              DeletedByEmail = @DeletedByEmail,
+              DeletedDateTime = SYSDATETIME(),
+              UpdatedBy = @DeletedBy,
+              UpdatedByEmail = @DeletedByEmail,
+              UpdatedDateTime = SYSDATETIME()
+          WHERE STNId = @STNId
+            AND IsDeleted = 0;
         `);
 
       await transaction.commit();
@@ -121,7 +177,7 @@ app.http("deleteSTN", {
       };
     } catch (error) {
       try {
-        if (transaction._aborted !== true) {
+        if (transaction) {
           await transaction.rollback();
         }
       } catch {}

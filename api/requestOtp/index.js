@@ -24,17 +24,23 @@ app.http("requestOtp", {
       const pool = await getPool();
 
       const userResult = await pool.request()
-        .input("UserEmail", sql.NVarChar(510), email)
+        .input("UserEmail", sql.NVarChar(1020), email)
         .query(`
           SELECT TOP 1
+              UserID,
               UserEmail,
               UserName,
-              IsActive
-          FROM app.STNUserAccess
+              IsActive,
+              IsDeleted
+          FROM STNAPP.Users
           WHERE LOWER(UserEmail) = @UserEmail
         `);
 
-      if (userResult.recordset.length === 0 || !userResult.recordset[0].IsActive) {
+      if (
+        userResult.recordset.length === 0 ||
+        !userResult.recordset[0].IsActive ||
+        userResult.recordset[0].IsDeleted
+      ) {
         return {
           status: 404,
           jsonBody: {
@@ -49,27 +55,29 @@ app.http("requestOtp", {
       const expiresOn = getOtpExpiry();
 
       await pool.request()
-        .input("UserEmail", sql.NVarChar(510), email)
+        .input("UserEmail", sql.NVarChar(1020), email)
         .query(`
-          UPDATE app.UserOTP
+          UPDATE STNAPP.UserOTP
           SET IsUsed = 1
           WHERE LOWER(UserEmail) = @UserEmail
             AND IsUsed = 0
         `);
 
       await pool.request()
-        .input("UserEmail", sql.NVarChar(510), email)
-        .input("OTPCode", sql.NVarChar(20), otp)
+        .input("UserEmail", sql.NVarChar(1020), email)
+        .input("OTPCode", sql.NVarChar(40), otp)
         .input("ExpiresOn", sql.DateTime2, expiresOn)
         .query(`
-          INSERT INTO app.UserOTP (
+          INSERT INTO STNAPP.UserOTP
+          (
               UserEmail,
               OTPCode,
               ExpiresOn,
               IsUsed,
               CreatedOn
           )
-          VALUES (
+          VALUES
+          (
               @UserEmail,
               @OTPCode,
               @ExpiresOn,
@@ -94,7 +102,7 @@ app.http("requestOtp", {
         status: 500,
         jsonBody: {
           success: false,
-          message: "Internal server error."
+          message: error.message || "Internal server error."
         }
       };
     }

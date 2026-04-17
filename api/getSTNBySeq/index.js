@@ -2,7 +2,7 @@ const { app } = require("@azure/functions");
 const { getPool, sql } = require("../shared/db");
 const { readCookie } = require("../shared/session");
 
-async function getAuthorizedAreas(pool, sessionId) {
+async function getSessionUser(pool, sessionId) {
   const result = await pool.request()
     .input("SessionID", sql.UniqueIdentifier, sessionId)
     .query(`
@@ -10,30 +10,42 @@ async function getAuthorizedAreas(pool, sessionId) {
           s.SessionID,
           s.ExpiresOn,
           s.IsRevoked,
+          u.UserID,
           u.UserEmail,
-          a.IsAllowedManufacturing,
-          a.IsAllowedDistribution,
-          a.IsActive
-      FROM app.UserSession s
-      INNER JOIN app.Users u
+          u.UserName,
+          u.IsAllowedManufacturing,
+          u.IsAllowedDistribution,
+          u.IsActive,
+          u.IsDeleted
+      FROM STNAPP.UserSession s
+      INNER JOIN STNAPP.Users u
           ON s.UserID = u.UserID
-      INNER JOIN app.STNUserAccess a
-          ON a.UserEmail = u.UserEmail
-      WHERE s.SessionID = @SessionID
+      WHERE s.SessionID = @SessionID;
     `);
 
   if (result.recordset.length === 0) return null;
 
   const row = result.recordset[0];
 
-  if (row.IsRevoked || !row.IsActive || new Date(row.ExpiresOn) < new Date()) {
+  if (
+    row.IsRevoked ||
+    !row.IsActive ||
+    row.IsDeleted ||
+    new Date(row.ExpiresOn) < new Date()
+  ) {
     return null;
   }
 
-  const areas = [];
-  if (row.IsAllowedManufacturing) areas.push("Manufacturing");
-  if (row.IsAllowedDistribution) areas.push("Distribution");
-  return areas;
+  const allowedAreas = [];
+  if (row.IsAllowedManufacturing) allowedAreas.push("Manufacturing");
+  if (row.IsAllowedDistribution) allowedAreas.push("Distribution");
+
+  return {
+    userId: row.UserID,
+    userEmail: row.UserEmail,
+    userName: row.UserName,
+    allowedAreas
+  };
 }
 
 app.http("getSTNBySeq", {
@@ -41,12 +53,12 @@ app.http("getSTNBySeq", {
   authLevel: "anonymous",
   handler: async (request) => {
     try {
-      const seqNo = request.query.get("seqNo");
+      const rawSearch = (request.query.get("search") || request.query.get("seqNo") || "").trim();
 
-      if (!seqNo) {
+      if (!rawSearch) {
         return {
           status: 400,
-          jsonBody: { success: false, message: "seqNo is required." }
+          jsonBody: { success: false, message: "Search value is required." }
         };
       }
 
@@ -55,45 +67,96 @@ app.http("getSTNBySeq", {
 
       if (!sessionId) {
         return {
-          status: 404,
-          jsonBody: { success: false, message: "No data found." }
+          status: 401,
+          jsonBody: { success: false, message: "Unauthorized." }
         };
       }
 
       const pool = await getPool();
-      const allowedAreas = await getAuthorizedAreas(pool, sessionId);
+      const sessionUser = await getSessionUser(pool, sessionId);
 
-      if (!allowedAreas || allowedAreas.length === 0) {
+      if (!sessionUser || sessionUser.allowedAreas.length === 0) {
         return {
-          status: 404,
-          jsonBody: { success: false, message: "No data found." }
+          status: 403,
+          jsonBody: { success: false, message: "Access denied." }
         };
       }
 
-      const headerResult = await pool.request()
-        .input("STNSeqNo", sql.Int, Number(seqNo))
-        .query(`
-          SELECT TOP 1
-              STNId,
-              STNNumber,
-              STNSeqNo,
-              STNType,
-              BusinessArea,
-              STNDate,
-              WarehouseFrom,
-              WarehouseTo,
-              WarehouseFromCustom,
-              WarehouseToCustom,
-              Remarks,
-              Status,
-              CreatedBy,
-              CreatedByEmail,
-              CreatedDateTime,
-              SubmittedDateTime
-          FROM app.STNHeader
-          WHERE STNSeqNo = @STNSeqNo
-          ORDER BY STNId DESC;
-        `);
+      const isNumericSearch = /^\d+$/.test(rawSearch);
+
+      let headerResult;
+
+      if (isNumericSearch) {
+        headerResult = await pool.request()
+          .input("SearchSeqNo", sql.Int, Number(rawSearch))
+          .query(`
+            SELECT TOP 1
+                STNId,
+                STNNumber,
+                STNSeqNo,
+                STNType,
+                BusinessArea,
+                STNDate,
+                WarehouseFrom,
+                WarehouseTo,
+                WarehouseFromCustom,
+                WarehouseToCustom,
+                Remarks,
+                Status,
+                CreatedBy,
+                CreatedByEmail,
+                CreatedDateTime,
+                UpdatedBy,
+                UpdatedByEmail,
+                UpdatedDateTime,
+                SubmittedBy,
+                SubmittedByEmail,
+                SubmittedDateTime,
+                DeletedBy,
+                DeletedByEmail,
+                DeletedDateTime,
+                IsDeleted
+            FROM STNAPP.STNHeader
+            WHERE STNSeqNo = @SearchSeqNo
+              AND IsDeleted = 0
+            ORDER BY STNId DESC;
+          `);
+      } else {
+        headerResult = await pool.request()
+          .input("SearchText", sql.NVarChar(400), rawSearch)
+          .query(`
+            SELECT TOP 1
+                STNId,
+                STNNumber,
+                STNSeqNo,
+                STNType,
+                BusinessArea,
+                STNDate,
+                WarehouseFrom,
+                WarehouseTo,
+                WarehouseFromCustom,
+                WarehouseToCustom,
+                Remarks,
+                Status,
+                CreatedBy,
+                CreatedByEmail,
+                CreatedDateTime,
+                UpdatedBy,
+                UpdatedByEmail,
+                UpdatedDateTime,
+                SubmittedBy,
+                SubmittedByEmail,
+                SubmittedDateTime,
+                DeletedBy,
+                DeletedByEmail,
+                DeletedDateTime,
+                IsDeleted
+            FROM STNAPP.STNHeader
+            WHERE STNNumber = @SearchText
+              AND IsDeleted = 0
+            ORDER BY STNId DESC;
+          `);
+      }
 
       if (headerResult.recordset.length === 0) {
         return {
@@ -104,10 +167,10 @@ app.http("getSTNBySeq", {
 
       const header = headerResult.recordset[0];
 
-      if (!allowedAreas.includes(header.BusinessArea)) {
+      if (!sessionUser.allowedAreas.includes(header.BusinessArea)) {
         return {
-          status: 404,
-          jsonBody: { success: false, message: "No data found." }
+          status: 403,
+          jsonBody: { success: false, message: "Access denied." }
         };
       }
 
@@ -125,7 +188,7 @@ app.http("getSTNBySeq", {
               Qty,
               LineRemarks,
               CreatedDateTime
-          FROM app.STNLine
+          FROM STNAPP.STNLine
           WHERE STNId = @STNId
           ORDER BY LineNu;
         `);

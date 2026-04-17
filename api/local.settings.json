@@ -8,6 +8,8 @@
     "DB_USER": "admin_user",
     "DB_PASSWORD": "#YWkS30P0Zb}",
 
+    "NODE_ENV": "development",
+
     "SMTP_HOST": "smtp.office365.com",
     "SMTP_PORT": "587",
     "SMTP_USER": "ctrl@maggadit.com",

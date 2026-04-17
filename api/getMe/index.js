@@ -1,19 +1,6 @@
 const { app } = require("@azure/functions");
 const { getPool, sql } = require("../shared/db");
-
-function getCookieValue(request, cookieName) {
-  const cookieHeader = request.headers.get("cookie") || "";
-  const cookies = cookieHeader.split(";").map(x => x.trim());
-
-  for (const cookie of cookies) {
-    const [name, ...rest] = cookie.split("=");
-    if (name === cookieName) {
-      return rest.join("=");
-    }
-  }
-
-  return null;
-}
+const { readCookie } = require("../shared/session");
 
 app.http("getMe", {
   methods: ["GET"],
@@ -21,11 +8,16 @@ app.http("getMe", {
   handler: async (request, context) => {
     try {
       const cookieName = process.env.SESSION_COOKIE_NAME || "stn_session";
-      const sessionId = getCookieValue(request, cookieName);
+      const sessionId = readCookie(request, cookieName);
 
       if (!sessionId) {
         return {
           status: 401,
+           headers: {
+              "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+              "Pragma": "no-cache",
+              "Expires": "0"
+            },
           jsonBody: {
             authenticated: false
           }
@@ -49,16 +41,23 @@ app.http("getMe", {
               u.UserRole,
               u.IsAllowedManufacturing,
               u.IsAllowedDistribution,
-              u.IsActive
-          FROM app.UserSession s
-          INNER JOIN app.Users u
+              u.IsManager,
+              u.IsActive,
+              u.IsDeleted
+          FROM STNAPP.UserSession s
+          INNER JOIN STNAPP.Users u
               ON s.UserID = u.UserID
-          WHERE s.SessionID = @SessionID
+          WHERE s.SessionID = @SessionID;
         `);
 
       if (result.recordset.length === 0) {
         return {
           status: 401,
+           headers: {
+              "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+              "Pragma": "no-cache",
+              "Expires": "0"
+            },
           jsonBody: {
             authenticated: false
           }
@@ -70,10 +69,16 @@ app.http("getMe", {
       if (
         row.IsRevoked ||
         !row.IsActive ||
+        row.IsDeleted ||
         new Date(row.ExpiresOn) < new Date()
       ) {
         return {
           status: 401,
+           headers: {
+    "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+    "Pragma": "no-cache",
+    "Expires": "0"
+  },
           jsonBody: {
             authenticated: false
           }
@@ -83,13 +88,18 @@ app.http("getMe", {
       await pool.request()
         .input("SessionID", sql.UniqueIdentifier, sessionId)
         .query(`
-          UPDATE app.UserSession
+          UPDATE STNAPP.UserSession
           SET LastAccessOn = SYSUTCDATETIME()
-          WHERE SessionID = @SessionID
+          WHERE SessionID = @SessionID;
         `);
 
       return {
         status: 200,
+         headers: {
+    "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+    "Pragma": "no-cache",
+    "Expires": "0"
+                  },
         jsonBody: {
           authenticated: true,
           userId: row.UserID,
@@ -97,14 +107,15 @@ app.http("getMe", {
           email: row.UserEmail || "",
           userRoles: row.UserRole ? [row.UserRole] : [],
           user: {
-            userId: row.UserID,
-            userEmail: row.UserEmail,
-            userName: row.UserName,
-            holdingName: row.HoldingName,
-            userRole: row.UserRole,
-            isAllowedManufacturing: row.IsAllowedManufacturing,
-            isAllowedDistribution: row.IsAllowedDistribution,
-            isActive: row.IsActive
+            UserID: row.UserID,
+            UserEmail: row.UserEmail,
+            UserName: row.UserName,
+            HoldingName: row.HoldingName,
+            UserRole: row.UserRole,
+            IsAllowedManufacturing: row.IsAllowedManufacturing,
+            IsAllowedDistribution: row.IsAllowedDistribution,
+            IsManager: row.IsManager,
+            IsActive: row.IsActive
           }
         }
       };
@@ -113,6 +124,11 @@ app.http("getMe", {
 
       return {
         status: 500,
+         headers: {
+    "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+    "Pragma": "no-cache",
+    "Expires": "0"
+  },
         jsonBody: {
           authenticated: false,
           message: "Internal server error."

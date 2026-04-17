@@ -2,7 +2,7 @@ const { app } = require("@azure/functions");
 const { getPool, sql } = require("../shared/db");
 const { readCookie } = require("../shared/session");
 
-async function getAuthorizedAreas(pool, sessionId) {
+async function getSessionUser(pool, sessionId) {
   const result = await pool.request()
     .input("SessionID", sql.UniqueIdentifier, sessionId)
     .query(`
@@ -10,30 +10,42 @@ async function getAuthorizedAreas(pool, sessionId) {
           s.SessionID,
           s.ExpiresOn,
           s.IsRevoked,
+          u.UserID,
           u.UserEmail,
-          a.IsAllowedManufacturing,
-          a.IsAllowedDistribution,
-          a.IsActive
-      FROM app.UserSession s
-      INNER JOIN app.Users u
+          u.UserName,
+          u.IsAllowedManufacturing,
+          u.IsAllowedDistribution,
+          u.IsActive,
+          u.IsDeleted
+      FROM STNAPP.UserSession s
+      INNER JOIN STNAPP.Users u
           ON s.UserID = u.UserID
-      INNER JOIN app.STNUserAccess a
-          ON a.UserEmail = u.UserEmail
-      WHERE s.SessionID = @SessionID
+      WHERE s.SessionID = @SessionID;
     `);
 
   if (result.recordset.length === 0) return null;
 
   const row = result.recordset[0];
 
-  if (row.IsRevoked || !row.IsActive || new Date(row.ExpiresOn) < new Date()) {
+  if (
+    row.IsRevoked ||
+    !row.IsActive ||
+    row.IsDeleted ||
+    new Date(row.ExpiresOn) < new Date()
+  ) {
     return null;
   }
 
-  const areas = [];
-  if (row.IsAllowedManufacturing) areas.push("Manufacturing");
-  if (row.IsAllowedDistribution) areas.push("Distribution");
-  return areas;
+  const allowedAreas = [];
+  if (row.IsAllowedManufacturing) allowedAreas.push("Manufacturing");
+  if (row.IsAllowedDistribution) allowedAreas.push("Distribution");
+
+  return {
+    userId: row.UserID,
+    userEmail: row.UserEmail,
+    userName: row.UserName,
+    allowedAreas
+  };
 }
 
 app.http("getSTN", {
@@ -41,12 +53,12 @@ app.http("getSTN", {
   authLevel: "anonymous",
   handler: async (request) => {
     try {
-      const stnId = request.query.get("stnId");
+      const stnId = Number(request.query.get("stnId"));
 
-      if (!stnId) {
+      if (!stnId || Number.isNaN(stnId)) {
         return {
           status: 400,
-          jsonBody: { success: false, message: "stnId is required." }
+          jsonBody: { success: false, message: "Valid stnId is required." }
         };
       }
 
@@ -55,23 +67,23 @@ app.http("getSTN", {
 
       if (!sessionId) {
         return {
-          status: 404,
-          jsonBody: { success: false, message: "STN not found." }
+          status: 401,
+          jsonBody: { success: false, message: "Unauthorized." }
         };
       }
 
       const pool = await getPool();
-      const allowedAreas = await getAuthorizedAreas(pool, sessionId);
+      const sessionUser = await getSessionUser(pool, sessionId);
 
-      if (!allowedAreas || allowedAreas.length === 0) {
+      if (!sessionUser || sessionUser.allowedAreas.length === 0) {
         return {
-          status: 404,
-          jsonBody: { success: false, message: "STN not found." }
+          status: 403,
+          jsonBody: { success: false, message: "Access denied." }
         };
       }
 
       const headerResult = await pool.request()
-        .input("STNId", sql.BigInt, Number(stnId))
+        .input("STNId", sql.BigInt, stnId)
         .query(`
           SELECT TOP 1
               STNId,
@@ -89,8 +101,17 @@ app.http("getSTN", {
               CreatedBy,
               CreatedByEmail,
               CreatedDateTime,
-              SubmittedDateTime
-          FROM app.STNHeader
+              UpdatedBy,
+              UpdatedByEmail,
+              UpdatedDateTime,
+              SubmittedBy,
+              SubmittedByEmail,
+              SubmittedDateTime,
+              DeletedBy,
+              DeletedByEmail,
+              DeletedDateTime,
+              IsDeleted
+          FROM STNAPP.STNHeader
           WHERE STNId = @STNId;
         `);
 
@@ -103,15 +124,22 @@ app.http("getSTN", {
 
       const header = headerResult.recordset[0];
 
-      if (!allowedAreas.includes(header.BusinessArea)) {
+      if (header.IsDeleted) {
         return {
           status: 404,
           jsonBody: { success: false, message: "STN not found." }
         };
       }
 
+      if (!sessionUser.allowedAreas.includes(header.BusinessArea)) {
+        return {
+          status: 403,
+          jsonBody: { success: false, message: "Access denied." }
+        };
+      }
+
       const lineResult = await pool.request()
-        .input("STNId", sql.BigInt, Number(stnId))
+        .input("STNId", sql.BigInt, stnId)
         .query(`
           SELECT
               STNLineId,
@@ -124,7 +152,7 @@ app.http("getSTN", {
               Qty,
               LineRemarks,
               CreatedDateTime
-          FROM app.STNLine
+          FROM STNAPP.STNLine
           WHERE STNId = @STNId
           ORDER BY LineNu;
         `);
