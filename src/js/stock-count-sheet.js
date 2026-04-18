@@ -33,7 +33,15 @@ function renderSheet() {
       <td>${line.ItemName || ""}</td>
       <td>${line.UOM || ""}</td>
       <td>${line.BatchNumber || ""}</td>
-      <td><input type="number" step="0.000001" class="counted-qty" data-lineid="${line.StockCountLineId}" value="${line.CountedQty ?? ""}" /></td>
+      <td>
+        <input
+          type="number"
+          step="0.000001"
+          class="counted-qty"
+          data-lineid="${line.StockCountLineId}"
+          value="${line.CountedQty ?? ""}"
+        />
+      </td>
     `;
     body.appendChild(tr);
   });
@@ -46,6 +54,7 @@ async function loadStockCount() {
   }
 
   try {
+    showPageLoader?.("Loading stock count...");
     setOutput("Loading stock count...");
 
     const res = await fetch(`/api/getStockCount?stockCountId=${encodeURIComponent(stockCountId)}`, {
@@ -72,9 +81,15 @@ async function loadStockCount() {
     currentHeader = data.header;
     currentLines = data.lines || [];
 
+    if (currentHeader?.BusinessArea) {
+      localStorage.setItem("selectedArea", currentHeader.BusinessArea);
+    }
+
     renderSheet();
   } catch (err) {
     setOutput(`Error: ${err.message}`);
+  } finally {
+    hidePageLoader?.();
   }
 }
 
@@ -98,6 +113,7 @@ document.getElementById("submitStockCountBtn")?.addEventListener("click", async 
   }
 
   try {
+    showPageLoader?.("Submitting stock count...");
     setOutput("Submitting stock count...");
 
     const res = await fetch("/api/submitStockCount", {
@@ -132,6 +148,8 @@ document.getElementById("submitStockCountBtn")?.addEventListener("click", async 
     window.location.href = `/stock-count-result.html?stockCountId=${encodeURIComponent(stockCountId)}`;
   } catch (err) {
     setOutput(`Error: ${err.message}`);
+  } finally {
+    hidePageLoader?.();
   }
 });
 

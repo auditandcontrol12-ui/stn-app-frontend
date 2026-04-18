@@ -3,46 +3,57 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Stock Count Sheet</title>
+  <title>Assign Stock Count</title>
   <link rel="stylesheet" href="/css/app.css" />
 </head>
 <body>
   <div class="container">
     <div class="top-hero">
       <div>
-        <span class="hero-badge">Stock Count</span>
-        <h1>Count Sheet</h1>
+        <span class="hero-badge">Manager Action</span>
+        <h1>Assign Stock Count</h1>
         <div class="page-subtitle">
-          Enter physical counted stock. System quantity is hidden at this stage.
+          Create and assign a stock count to a supervisor.
         </div>
       </div>
     </div>
 
     <div class="page-shell">
       <div class="card">
-        <div class="section-title">Count Summary</div>
-        <div class="summary-grid">
-          <div class="summary-item">
-            <div class="label">Count Number</div>
-            <div class="value" id="schCountNumber"></div>
+        <div class="section-title">Header</div>
+        <div class="form-grid">
+          <div class="field-block">
+            <label for="businessArea">Business Area</label>
+            <input id="businessArea" type="text" readonly />
           </div>
-          <div class="summary-item">
-            <div class="label">Warehouse</div>
-            <div class="value" id="schWarehouse"></div>
+
+          <div class="field-block">
+            <label for="warehouseCode">Warehouse</label>
+            <select id="warehouseCode">
+              <option value="">Select warehouse</option>
+            </select>
           </div>
-          <div class="summary-item">
-            <div class="label">Area</div>
-            <div class="value" id="schArea"></div>
+
+          <div class="field-block">
+            <label for="assignedToUserEmail">Assign To Supervisor</label>
+            <select id="assignedToUserEmail">
+              <option value="">Select supervisor</option>
+            </select>
           </div>
-          <div class="summary-item">
-            <div class="label">Status</div>
-            <div class="value" id="schStatus"></div>
+
+          <div class="field-block">
+            <label for="remarks">Remarks</label>
+            <textarea id="remarks" placeholder="Optional remarks"></textarea>
           </div>
         </div>
       </div>
 
       <div class="card">
-        <div class="section-title">Count Entry</div>
+        <div class="section-title">Lines</div>
+        <div class="action-row" style="margin-bottom:14px;">
+          <button id="addLineBtn">Add Line</button>
+        </div>
+
         <div class="lines-table-wrap">
           <table class="lines-table">
             <thead>
@@ -52,23 +63,23 @@
                 <th>Item Name</th>
                 <th>UOM</th>
                 <th>Batch Number</th>
-                <th>Counted Qty</th>
+                <th>Actions</th>
               </tr>
             </thead>
-            <tbody id="stockCountSheetLines"></tbody>
+            <tbody id="linesBody"></tbody>
           </table>
         </div>
       </div>
 
       <div class="card soft">
         <div class="action-row">
-          <button id="submitStockCountBtn" class="success">Submit Stock Count</button>
+          <button id="assignBtn" class="success">Assign Stock Count</button>
           <button id="backDashboardBtn" class="secondary">Back to Dashboard</button>
         </div>
       </div>
 
       <!-- <div class="card output-card">
-        <pre id="stockCountSheetOutput">Loading stock count...</pre>
+        <pre id="output">Waiting...</pre>
       </div> -->
     </div>
   </div>
@@ -81,6 +92,6 @@
     </div>
   </div> -->
 
-  <script src="/js/stock-count-sheet.js"></script>
+  <script src="/js/assign-stock-count.js"></script>
 </body>
 </html>

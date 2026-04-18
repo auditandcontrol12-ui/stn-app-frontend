@@ -24,7 +24,7 @@ async function getSessionUser(pool, sessionId) {
       WHERE s.SessionID = @SessionID;
     `);
 
-  if (result.recordset.length === 0) return null;
+  if (!result.recordset.length) return null;
 
   const row = result.recordset[0];
 
@@ -107,8 +107,11 @@ app.http("submitStockCount", {
           SELECT TOP 1
               StockCountId,
               CountNumber,
+              BusinessArea,
               Status,
-              CreatedByEmail,
+              AssignedToUserEmail,
+              AssignedByEmail,
+              StartedByEmail,
               ManagerEmail,
               IsDeleted
           FROM STNAPP.StockCountHeader
@@ -123,28 +126,45 @@ app.http("submitStockCount", {
       }
 
       const header = headerResult.recordset[0];
-      const isCreator =
-        (sessionUser.UserEmail || "").toLowerCase() ===
-        (header.CreatedByEmail || "").toLowerCase();
+      const currentEmail = (sessionUser.UserEmail || "").toLowerCase();
+      const isAssignee = currentEmail === (header.AssignedToUserEmail || "").toLowerCase();
+      const isStarter = currentEmail === (header.StartedByEmail || "").toLowerCase();
 
-      if (!isCreator && !sessionUser.IsManager) {
+      if (!isAssignee && !isStarter && !sessionUser.IsManager) {
         return {
           status: 403,
           jsonBody: { success: false, message: "Access denied." }
         };
       }
 
-      if (header.IsDeleted) {
+      if (
+        (header.BusinessArea === "Manufacturing" && !sessionUser.IsAllowedManufacturing && !sessionUser.IsManager) ||
+        (header.BusinessArea === "Distribution" && !sessionUser.IsAllowedDistribution && !sessionUser.IsManager)
+      ) {
+        return {
+          status: 403,
+          jsonBody: { success: false, message: "Access denied for selected business area." }
+        };
+      }
+
+      if (header.IsDeleted || header.Status === "Deleted") {
         return {
           status: 400,
           jsonBody: { success: false, message: "Deleted stock count cannot be submitted." }
         };
       }
 
-      if (header.Status !== "Open") {
+      if (header.Status === "Submitted") {
         return {
           status: 400,
-          jsonBody: { success: false, message: "Only open stock counts can be submitted." }
+          jsonBody: { success: false, message: "Stock count is already submitted." }
+        };
+      }
+
+      if (!["Assigned", "In Progress"].includes(header.Status)) {
+        return {
+          status: 400,
+          jsonBody: { success: false, message: "Only assigned or in progress stock counts can be submitted." }
         };
       }
 
@@ -164,12 +184,15 @@ app.http("submitStockCount", {
 
       await new sql.Request(transaction)
         .input("StockCountId", sql.BigInt, stockCountId)
-        .input("SubmittedBy", sql.NVarChar(800), sessionUser.UserName || "")
-        .input("SubmittedByEmail", sql.NVarChar(1020), sessionUser.UserEmail || "")
+        .input("SubmittedBy", sql.NVarChar(400), sessionUser.UserName || "")
+        .input("SubmittedByEmail", sql.NVarChar(510), sessionUser.UserEmail || "")
         .query(`
           UPDATE STNAPP.StockCountHeader
           SET
               Status = 'Submitted',
+              StartedBy = CASE WHEN StartedBy IS NULL THEN @SubmittedBy ELSE StartedBy END,
+              StartedByEmail = CASE WHEN StartedByEmail IS NULL THEN @SubmittedByEmail ELSE StartedByEmail END,
+              StartedDateTime = CASE WHEN StartedDateTime IS NULL THEN SYSDATETIME() ELSE StartedDateTime END,
               SubmittedBy = @SubmittedBy,
               SubmittedByEmail = @SubmittedByEmail,
               SubmittedDateTime = SYSDATETIME(),
@@ -178,46 +201,6 @@ app.http("submitStockCount", {
               UpdatedDateTime = SYSDATETIME()
           WHERE StockCountId = @StockCountId;
         `);
-
-      if (
-        header.ManagerEmail &&
-        (header.ManagerEmail || "").toLowerCase() !== (sessionUser.UserEmail || "").toLowerCase()
-      ) {
-        await new sql.Request(transaction)
-          .input("UserEmail", sql.NVarChar(1020), header.ManagerEmail)
-          .input("Title", sql.NVarChar(600), "Stock Count Submitted")
-          .input("Message", sql.NVarChar(2000), `Stock count ${header.CountNumber} was submitted by ${sessionUser.UserName}.`)
-          .input("NotificationType", sql.NVarChar(100), "StockCountRequest")
-          .input("RelatedEntityType", sql.NVarChar(100), "StockCount")
-          .input("RelatedEntityId", sql.BigInt, stockCountId)
-          .input("CreatedBy", sql.NVarChar(1020), sessionUser.UserEmail || "")
-          .query(`
-            INSERT INTO STNAPP.UserNotification
-            (
-                UserEmail,
-                Title,
-                Message,
-                NotificationType,
-                RelatedEntityType,
-                RelatedEntityId,
-                IsRead,
-                CreatedDateTime,
-                CreatedBy
-            )
-            VALUES
-            (
-                @UserEmail,
-                @Title,
-                @Message,
-                @NotificationType,
-                @RelatedEntityType,
-                @RelatedEntityId,
-                0,
-                SYSDATETIME(),
-                @CreatedBy
-            );
-          `);
-      }
 
       await transaction.commit();
 

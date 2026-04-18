@@ -4,10 +4,10 @@ const { readCookie } = require("../shared/session");
 
 const AREA_CONFIG = {
   Distribution: {
-    whsObjectName: "dist.FactCustomWhsAttributes"
+    whsObjectName: "stnapp.FactWhsAttributeDist"
   },
   Manufacturing: {
-    whsObjectName: "manu.FactCustomWhsAttributes"
+    whsObjectName: "stnapp.FactWhsAttributeManu"
   }
 };
 

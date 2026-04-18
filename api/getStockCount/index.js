@@ -43,9 +43,10 @@ async function getSessionUser(pool, sessionId) {
 app.http("getStockCount", {
   methods: ["GET"],
   authLevel: "anonymous",
-  handler: async (request) => {
+  handler: async (request, context) => {
     try {
-      const stockCountId = Number(request.query.get("stockCountId"));
+      const url = new URL(request.url);
+      const stockCountId = Number(url.searchParams.get("stockCountId"));
 
       if (!stockCountId || Number.isNaN(stockCountId)) {
         return {
@@ -87,15 +88,29 @@ app.http("getStockCount", {
               Status,
               ManagerEmail,
               Remarks,
+
+              AssignedToUserName,
+              AssignedToUserEmail,
+              AssignedBy,
+              AssignedByEmail,
+              AssignedDateTime,
+
+              StartedBy,
+              StartedByEmail,
+              StartedDateTime,
+
               CreatedBy,
               CreatedByEmail,
               CreatedDateTime,
+
               SubmittedBy,
               SubmittedByEmail,
               SubmittedDateTime,
+
               UpdatedBy,
               UpdatedByEmail,
               UpdatedDateTime,
+
               DeletedBy,
               DeletedByEmail,
               DeletedDateTime,
@@ -120,14 +135,27 @@ app.http("getStockCount", {
         };
       }
 
-      const isCreator =
-        (sessionUser.UserEmail || "").toLowerCase() ===
-        (header.CreatedByEmail || "").toLowerCase();
+      const currentEmail = (sessionUser.UserEmail || "").toLowerCase();
+      const isCreator = currentEmail === (header.CreatedByEmail || "").toLowerCase();
+      const isAssignee = currentEmail === (header.AssignedToUserEmail || "").toLowerCase();
+      const isStarter = currentEmail === (header.StartedByEmail || "").toLowerCase();
+      const isManagerOwner = currentEmail === (header.AssignedByEmail || "").toLowerCase();
+      const isManager = !!sessionUser.IsManager;
 
-      if (!isCreator && !sessionUser.IsManager) {
+      if (!isCreator && !isAssignee && !isStarter && !isManagerOwner && !isManager) {
         return {
           status: 403,
           jsonBody: { success: false, message: "Access denied." }
+        };
+      }
+
+      if (
+        (header.BusinessArea === "Manufacturing" && !sessionUser.IsAllowedManufacturing && !isManager) ||
+        (header.BusinessArea === "Distribution" && !sessionUser.IsAllowedDistribution && !isManager)
+      ) {
+        return {
+          status: 403,
+          jsonBody: { success: false, message: "Access denied for selected business area." }
         };
       }
 
@@ -160,6 +188,8 @@ app.http("getStockCount", {
         }
       };
     } catch (error) {
+      context.log("getStockCount error", error);
+
       return {
         status: 500,
         jsonBody: {

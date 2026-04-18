@@ -6,7 +6,7 @@
   <title>STN Success</title>
   <link rel="stylesheet" href="/css/app.css" />
 </head>
-<body>
+<body class="stn-print-mode">
   <div class="container print-shell" id="printRoot">
     <div class="top-hero no-print">
       <div>
@@ -34,8 +34,8 @@
             <div class="value" id="scStnNumber"></div>
           </div>
           <div class="summary-item">
-            <div class="label">STN ID</div>
-            <div class="value" id="scStnId"></div>
+            <div class="label">STN Seq No</div>
+            <div class="value" id="scStnSeqNo"></div>
           </div>
           <div class="summary-item">
             <div class="label">STN Type</div>
@@ -93,22 +93,10 @@
           <button id="goDashboardBtn" class="secondary">Dashboard</button>
         </div>
       </div>
-
-      <div class="card output-card no-print">
-        <pre id="successOutput">Loading submitted STN...</pre>
-      </div>
     </div>
   </div>
 
   <script src="/js/app.js"></script>
-
-<div id="pageLoader" class="page-loader" aria-hidden="true">
-  <div class="page-loader-card">
-    <div class="page-loader-spinner"></div>
-    <div id="pageLoaderText" class="page-loader-text">Loading...</div>
-  </div>
-</div>
-
   <script src="/js/stn-success.js"></script>
 </body>
 </html>

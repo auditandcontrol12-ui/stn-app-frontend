@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Assigned Stock Counts</title>
+  <link rel="stylesheet" href="/css/app.css" />
+</head>
+<body>
+  <div class="container">
+    <div class="top-hero">
+      <div>
+        <span class="hero-badge">Manager View</span>
+        <h1>Assigned Stock Counts</h1>
+        <div class="page-subtitle">
+          View stock count status and delete if required.
+        </div>
+      </div>
+    </div>
+
+    <div class="page-shell">
+      <div class="card">
+        <div class="section-title">Filters</div>
+        <div class="action-row">
+          <button class="status-filter-btn success" data-status="">All</button>
+          <button class="status-filter-btn" data-status="Assigned">Assigned</button>
+          <button class="status-filter-btn" data-status="In Progress">In Progress</button>
+          <button class="status-filter-btn" data-status="Submitted">Submitted</button>
+          <button class="status-filter-btn" data-status="Deleted">Deleted</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">Summary</div>
+        <div class="summary-grid">
+          <div class="summary-item">
+            <div class="label">Assigned</div>
+            <div class="value" id="countAssigned">0</div>
+          </div>
+          <div class="summary-item">
+            <div class="label">In Progress</div>
+            <div class="value" id="countInProgress">0</div>
+          </div>
+          <div class="summary-item">
+            <div class="label">Submitted</div>
+            <div class="value" id="countSubmitted">0</div>
+          </div>
+          <div class="summary-item">
+            <div class="label">Deleted</div>
+            <div class="value" id="countDeleted">0</div>
+          </div>
+          <div class="summary-item">
+            <div class="label">Total</div>
+            <div class="value" id="countTotal">0</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">Assigned Stock Counts</div>
+        <div class="lines-table-wrap">
+          <table class="lines-table">
+            <thead>
+              <tr>
+                <th>Count No</th>
+                <th>Area</th>
+                <th>Warehouse</th>
+                <th>Assigned To</th>
+                <th>Status</th>
+                <th>Assigned At</th>
+                <th>Started At</th>
+                <th>Submitted At</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="assignedBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card soft">
+        <div class="action-row">
+          <button id="backDashboardBtn" class="secondary">Back to Dashboard</button>
+        </div>
+      </div>
+
+      <!-- <div class="card output-card">
+        <pre id="output">Loading assigned stock counts...</pre>
+      </div> -->
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <!-- <div id="pageLoader" class="page-loader" aria-hidden="true">
+    <div class="page-loader-card">
+      <div class="page-loader-spinner"></div>
+      <div id="pageLoaderText" class="page-loader-text">Loading...</div>
+    </div>
+  </div> -->
+
+  <script src="/js/assigned-stock-counts.js"></script>
+</body>
+</html>

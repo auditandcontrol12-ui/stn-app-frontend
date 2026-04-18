@@ -2,6 +2,7 @@ const params = new URLSearchParams(window.location.search);
 const txnType = params.get("type") || "";
 const businessArea = params.get("area") || "";
 const stnIdFromUrl = params.get("stnId") || "";
+const pageMode = params.get("mode") || "";
 
 const output = document.getElementById("output");
 const linesContainer = document.getElementById("linesContainer");
@@ -24,6 +25,16 @@ function todayString() {
   return d.toISOString().slice(0, 10);
 }
 
+function clearStnDraftState() {
+  localStorage.removeItem("stnDraftData");
+  localStorage.removeItem("stnLastSubmitted");
+  localStorage.removeItem("stnPreviewData");
+  localStorage.removeItem("stnCurrentEditId");
+  sessionStorage.removeItem("stnDraftData");
+  sessionStorage.removeItem("stnPreviewData");
+  sessionStorage.removeItem("stnCurrentEditId");
+}
+
 function loadCurrentUser() {
   const raw = localStorage.getItem("stnCurrentUser");
   if (!raw) return null;
@@ -36,6 +47,10 @@ function loadCurrentUser() {
 }
 
 function loadSavedDraft() {
+  if (pageMode === "new") {
+    return null;
+  }
+
   const raw = localStorage.getItem("stnDraftData");
   if (!raw) return null;
 
@@ -54,6 +69,14 @@ function loadSavedDraft() {
   } catch {
     return null;
   }
+}
+
+function getTxnTypeDisplay(value) {
+  const map = {
+    IN: "IN-BOUND",
+    OB: "OUT-BOUND"
+  };
+  return map[value] || value || "";
 }
 
 function setEntryStatus(status) {
@@ -83,7 +106,6 @@ function setEntryStatus(status) {
 
 function fillHeaderInfo() {
   const user = loadCurrentUser();
-  // const existingDraft = loadSavedDraft();
   const existingDraft = loadSavedDraft();
 
   const txnTypeEl = document.getElementById("txnType");
@@ -92,13 +114,12 @@ function fillHeaderInfo() {
   const createdByEl = document.getElementById("createdBy");
   const createdByEmailEl = document.getElementById("createdByEmail");
 
-  if (txnTypeEl) txnTypeEl.textContent = txnType;
+  if (txnTypeEl) txnTypeEl.textContent = getTxnTypeDisplay(txnType);
   if (businessAreaEl) businessAreaEl.textContent = businessArea;
   if (stnDateTextEl) stnDateTextEl.textContent = existingDraft?.stnDate || todayString();
   if (createdByEl) createdByEl.textContent = user?.UserName || "";
   if (createdByEmailEl) createdByEmailEl.textContent = user?.UserEmail || "";
 
-  // setEntryStatus(existingDraft?.status || "Unsaved");
   setEntryStatus(existingDraft?.status || (stnIdFromUrl ? "Draft" : "Unsaved"));
 }
 
@@ -125,6 +146,25 @@ function buildWarehouseOptions(selectEl) {
   selectEl.appendChild(otherOpt);
 }
 
+function buildItemDatalist() {
+  let list = document.getElementById("itemCodeList");
+
+  if (!list) {
+    list = document.createElement("datalist");
+    list.id = "itemCodeList";
+    document.body.appendChild(list);
+  }
+
+  list.innerHTML = "";
+
+  items.forEach((i) => {
+    const opt = document.createElement("option");
+    opt.value = i.ItemCode || "";
+    opt.label = `${i.ItemName || ""} | ${i.UOM || ""}`;
+    list.appendChild(opt);
+  });
+}
+
 function toggleCustomWarehouse(selectId, inputId) {
   const selectEl = document.getElementById(selectId);
   const inputEl = document.getElementById(inputId);
@@ -139,26 +179,6 @@ function toggleCustomWarehouse(selectId, inputId) {
   }
 }
 
-function createItemOptions(selectEl) {
-  if (!selectEl) return;
-
-  selectEl.innerHTML = "";
-
-  const defaultOpt = document.createElement("option");
-  defaultOpt.value = "";
-  defaultOpt.textContent = "-- Select Item --";
-  selectEl.appendChild(defaultOpt);
-
-  items.forEach((i) => {
-    const opt = document.createElement("option");
-    opt.value = i.ItemCode;
-    opt.textContent = `${i.ItemCode} - ${i.ItemName}`;
-    opt.dataset.itemName = i.ItemName;
-    opt.dataset.uom = i.UOM;
-    selectEl.appendChild(opt);
-  });
-}
-
 function refreshLineNumbers() {
   const rows = [...document.querySelectorAll("#linesContainer > tr")];
   rows.forEach((row, index) => {
@@ -168,6 +188,42 @@ function refreshLineNumbers() {
       lineCell.textContent = index + 1;
     }
   });
+}
+
+function sanitizeQtyInput(input) {
+  if (!input) return;
+  input.value = input.value.replace(/[^\d]/g, "");
+}
+
+function findItem(term) {
+  const q = String(term || "").trim().toLowerCase();
+  if (!q) return null;
+
+  return items.find((i) =>
+    String(i.ItemCode || "").toLowerCase() === q ||
+    String(i.ItemName || "").toLowerCase() === q
+  ) || null;
+}
+
+function applySelectedItemToRow(row, item) {
+  if (!row) return;
+
+  const itemSearch = row.querySelector(".line-item-search");
+  const itemCode = row.querySelector(".line-item");
+  const itemName = row.querySelector(".line-item-name");
+  const uom = row.querySelector(".line-uom");
+
+  if (!item) {
+    if (itemCode) itemCode.value = "";
+    if (itemName) itemName.value = "";
+    if (uom) uom.value = "";
+    return;
+  }
+
+  if (itemCode) itemCode.value = item.ItemCode || "";
+  if (itemSearch) itemSearch.value = item.ItemCode || "";
+  if (itemName) itemName.value = item.ItemName || "";
+  if (uom) uom.value = item.UOM || "";
 }
 
 function addLineRow(lineData = null) {
@@ -183,28 +239,33 @@ function addLineRow(lineData = null) {
 
   row.innerHTML = `
     <td class="col-line line-no">${lineCounter}</td>
-    <td><select class="line-item"></select></td>
+    <td>
+      <input class="line-item-search" type="text" list="itemCodeList" placeholder="Type item code" autocomplete="off" />
+      <input class="line-item" type="hidden" />
+    </td>
     <td><input class="line-item-name" type="text" readonly /></td>
     <td><input class="line-uom" type="text" readonly /></td>
     <td><input class="line-batch" type="text" /></td>
-    <td><input class="line-qty" type="number" step="0.000001" /></td>
+    <td><input class="line-qty" type="number" step="1" min="1" inputmode="numeric" /></td>
     <td><input class="line-remarks" type="text" /></td>
     <td class="col-actions"><button type="button" class="danger mini-btn remove-line-btn">Remove</button></td>
   `;
 
   linesContainer.appendChild(row);
 
-  const itemSelect = row.querySelector(".line-item");
-  const itemName = row.querySelector(".line-item-name");
-  const uom = row.querySelector(".line-uom");
+  const itemSearch = row.querySelector(".line-item-search");
+  const qtyInput = row.querySelector(".line-qty");
+  const batchInput = row.querySelector(".line-batch");
+  const remarksInput = row.querySelector(".line-remarks");
 
-  createItemOptions(itemSelect);
+  function resolveItemSelection() {
+    const item = findItem(itemSearch.value);
+    applySelectedItemToRow(row, item);
+    markDraftAsUnsavedIfNeeded();
+  }
 
-  itemSelect.addEventListener("change", () => {
-    const selected = itemSelect.options[itemSelect.selectedIndex];
-    itemName.value = selected?.dataset?.itemName || "";
-    uom.value = selected?.dataset?.uom || "";
-  });
+  itemSearch.addEventListener("change", resolveItemSelection);
+  itemSearch.addEventListener("blur", resolveItemSelection);
 
   row.querySelector(".remove-line-btn").addEventListener("click", () => {
     row.remove();
@@ -212,17 +273,21 @@ function addLineRow(lineData = null) {
     markDraftAsUnsavedIfNeeded();
   });
 
-  row.querySelector(".line-batch").addEventListener("input", markDraftAsUnsavedIfNeeded);
-  row.querySelector(".line-qty").addEventListener("input", markDraftAsUnsavedIfNeeded);
-  row.querySelector(".line-remarks").addEventListener("input", markDraftAsUnsavedIfNeeded);
-  itemSelect.addEventListener("change", markDraftAsUnsavedIfNeeded);
+  qtyInput.addEventListener("input", () => {
+    sanitizeQtyInput(qtyInput);
+    markDraftAsUnsavedIfNeeded();
+  });
+
+  batchInput.addEventListener("input", markDraftAsUnsavedIfNeeded);
+  remarksInput.addEventListener("input", markDraftAsUnsavedIfNeeded);
 
   if (lineData) {
-    itemSelect.value = lineData.itemCode || "";
-    itemSelect.dispatchEvent(new Event("change"));
-    row.querySelector(".line-batch").value = lineData.batchNumber || "";
-    row.querySelector(".line-qty").value = lineData.qty || "";
-    row.querySelector(".line-remarks").value = lineData.lineRemarks || "";
+    const item = items.find((i) => i.ItemCode === (lineData.itemCode || ""));
+    applySelectedItemToRow(row, item);
+    batchInput.value = lineData.batchNumber || "";
+    qtyInput.value = lineData.qty || "";
+    sanitizeQtyInput(qtyInput);
+    remarksInput.value = lineData.lineRemarks || "";
   }
 }
 
@@ -278,7 +343,11 @@ function validateForm(data) {
 
   for (const line of data.lines) {
     if (!line.itemCode) return `Line ${line.lineNu}: Item is required.`;
-    if (!line.qty || Number(line.qty) <= 0) return `Line ${line.lineNu}: Qty must be greater than 0.`;
+    if (!line.batchNumber) return `Line ${line.lineNu}: Batch Number is required.`;
+    if (!line.qty) return `Line ${line.lineNu}: Qty is required.`;
+    if (!Number.isInteger(Number(line.qty)) || Number(line.qty) <= 0) {
+      return `Line ${line.lineNu}: Qty must be a whole number greater than 0.`;
+    }
   }
 
   return "";
@@ -307,7 +376,7 @@ function restoreDraftToForm(draft) {
   lineCounter = 0;
 
   if (draft.lines && draft.lines.length) {
-    draft.lines.forEach(line => addLineRow(line));
+    draft.lines.forEach((line) => addLineRow(line));
   } else {
     addLineRow();
   }
@@ -317,58 +386,34 @@ function restoreDraftToForm(draft) {
   return true;
 }
 
-// function loadLookups() {
-//   return (async () => {
-//     try {
-//       if (!businessArea) {
-//         log("Business area missing in URL.");
-//         return;
-//       }
+function resetForNewEntry() {
+  clearStnDraftState();
 
-//       log(`Loading lookups for ${businessArea}...`);
+  const warehouseFrom = document.getElementById("warehouseFrom");
+  const warehouseTo = document.getElementById("warehouseTo");
+  const warehouseFromCustom = document.getElementById("warehouseFromCustom");
+  const warehouseToCustom = document.getElementById("warehouseToCustom");
+  const remarks = document.getElementById("remarks");
 
-//       const res = await fetch(`/api/getLookups?area=${encodeURIComponent(businessArea)}`, {
-//         credentials: "include"
-//       });
-//       const text = await res.text();
+  if (warehouseFrom) warehouseFrom.value = "";
+  if (warehouseTo) warehouseTo.value = "";
 
-//       let data;
-//       try {
-//         data = JSON.parse(text);
-//       } catch {
-//         log(`Non-JSON response:\n${text}`);
-//         return;
-//       }
+  toggleCustomWarehouse("warehouseFrom", "warehouseFromCustom");
+  toggleCustomWarehouse("warehouseTo", "warehouseToCustom");
 
-//       if (!data.success) {
-//         log("Lookup API returned failure.", data);
-//         return;
-//       }
+  if (warehouseFromCustom) warehouseFromCustom.value = "";
+  if (warehouseToCustom) warehouseToCustom.value = "";
+  if (remarks) remarks.value = "";
 
-//       items = data.items || [];
-//       warehouses = data.warehouses || [];
+  if (linesContainer) {
+    linesContainer.innerHTML = "";
+  }
 
-//       buildWarehouseOptions(document.getElementById("warehouseFrom"));
-//       buildWarehouseOptions(document.getElementById("warehouseTo"));
-
-//       const restored = restoreDraftToForm(loadSavedDraft());
-
-//       if (!restored) {
-//         addLineRow();
-//       }
-
-//       log("Lookups loaded successfully.", {
-//         success: true,
-//         itemCount: items.length,
-//         warehouseCount: warehouses.length,
-//         area: businessArea,
-//         restoredDraft: restored
-//       });
-//     } catch (err) {
-//       log(`Error while loading lookups: ${err.message}`);
-//     }
-//   })();
-// }
+  lineCounter = 0;
+  addLineRow();
+  refreshLineNumbers();
+  setEntryStatus("Unsaved");
+}
 
 function loadLookups() {
   return (async () => {
@@ -401,11 +446,25 @@ function loadLookups() {
       items = data.items || [];
       warehouses = data.warehouses || [];
 
+      buildItemDatalist();
       buildWarehouseOptions(document.getElementById("warehouseFrom"));
       buildWarehouseOptions(document.getElementById("warehouseTo"));
 
       let draftToRestore = null;
       let restored = false;
+
+      if (pageMode === "new") {
+        resetForNewEntry();
+        log("Lookups loaded successfully.", {
+          success: true,
+          itemCount: items.length,
+          warehouseCount: warehouses.length,
+          area: businessArea,
+          restoredDraft: false,
+          mode: pageMode
+        });
+        return;
+      }
 
       if (stnIdFromUrl) {
         try {
@@ -434,7 +493,8 @@ function loadLookups() {
         warehouseCount: warehouses.length,
         area: businessArea,
         restoredDraft: restored,
-        stnIdFromUrl: stnIdFromUrl || null
+        stnIdFromUrl: stnIdFromUrl || null,
+        mode: pageMode || "default"
       });
     } catch (err) {
       log(`Error while loading lookups: ${err.message}`);
@@ -507,17 +567,6 @@ function bindEvents() {
   }
 }
 
-function init() {
-  try {
-    fillHeaderInfo();
-    bindEvents();
-    loadLookups();
-  } catch (err) {
-    log(`Page init failed: ${err.message}`);
-    console.error(err);
-  }
-}
-
 async function loadDraftFromDb(stnId) {
   const res = await fetch(`/api/getSTN?stnId=${encodeURIComponent(stnId)}`, {
     credentials: "include"
@@ -564,6 +613,21 @@ async function loadDraftFromDb(stnId) {
       lineRemarks: line.LineRemarks || ""
     }))
   };
+}
+
+function init() {
+  try {
+    if (pageMode === "new") {
+      clearStnDraftState();
+    }
+
+    fillHeaderInfo();
+    bindEvents();
+    loadLookups();
+  } catch (err) {
+    log(`Page init failed: ${err.message}`);
+    console.error(err);
+  }
 }
 
 init();

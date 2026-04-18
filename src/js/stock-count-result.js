@@ -23,16 +23,26 @@ function formatQty(value) {
   });
 }
 
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
 async function loadStockCountResult() {
-  const output = document.getElementById("stockCountResultOutput");
   const body = document.getElementById("stockCountResultLines");
 
   if (!stockCountId) {
-    if (output) output.textContent = "stockCountId missing.";
+    alert("stockCountId missing.");
     return;
   }
 
   try {
+    showPageLoader?.("Loading stock count result...");
+
     const res = await fetch(`/api/getStockCount?stockCountId=${encodeURIComponent(stockCountId)}`, {
       credentials: "include"
     });
@@ -43,18 +53,21 @@ async function loadStockCountResult() {
     try {
       data = JSON.parse(text);
     } catch {
-      if (output) output.textContent = `Non-JSON response:\n${text}`;
+      alert("Invalid response received from server.");
       return;
     }
-
-    if (output) output.textContent = JSON.stringify(data, null, 2);
 
     if (!res.ok || !data.success) {
+      alert(data.message || "Failed to load stock count result.");
       return;
     }
 
-    const h = data.header;
+    const h = data.header || {};
     const lines = data.lines || [];
+
+    if (h.BusinessArea) {
+      localStorage.setItem("selectedArea", h.BusinessArea);
+    }
 
     document.title = h.CountNumber || "Stock Count";
 
@@ -74,10 +87,10 @@ async function loadStockCountResult() {
         const tr = document.createElement("tr");
         tr.innerHTML = `
           <td class="col-line">${index + 1}</td>
-          <td>${line.ItemCode || ""}</td>
-          <td>${line.ItemName || ""}</td>
-          <td>${line.UOM || ""}</td>
-          <td>${line.BatchNumber || ""}</td>
+          <td>${escapeHtml(line.ItemCode || "")}</td>
+          <td>${escapeHtml(line.ItemName || "")}</td>
+          <td>${escapeHtml(line.UOM || "")}</td>
+          <td>${escapeHtml(line.BatchNumber || "")}</td>
           <td>${formatQty(line.SystemQtyAtStart)}</td>
           <td>${formatQty(line.CountedQty)}</td>
           <td>${formatQty(line.VarianceQty)}</td>
@@ -86,7 +99,9 @@ async function loadStockCountResult() {
       });
     }
   } catch (err) {
-    if (output) output.textContent = `Error: ${err.message}`;
+    alert(`Error: ${err.message}`);
+  } finally {
+    hidePageLoader?.();
   }
 }
 

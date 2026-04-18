@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Pending Stock Counts</title>
+  <link rel="stylesheet" href="/css/app.css" />
+</head>
+<body>
+  <div class="container">
+    <div class="top-hero">
+      <div>
+        <span class="hero-badge">Supervisor Queue</span>
+        <h1>My Pending Stock Counts</h1>
+        <div class="page-subtitle">
+          Assigned and in-progress stock counts pending action.
+        </div>
+      </div>
+    </div>
+
+    <div class="page-shell">
+      <div class="card">
+        <div class="section-title">Pending Stock Counts</div>
+        <div class="lines-table-wrap">
+          <table class="lines-table">
+            <thead>
+              <tr>
+                <th>Count No</th>
+                <th>Area</th>
+                <th>Warehouse</th>
+                <th>Status</th>
+                <th>Assigned By</th>
+                <th>Assigned At</th>
+                <th>Started At</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="pendingBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card soft">
+        <div class="action-row">
+          <button id="backDashboardBtn" class="secondary">Back to Dashboard</button>
+        </div>
+      </div>
+
+      <div class="card output-card">
+        <pre id="output">Loading pending stock counts...</pre>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <div id="pageLoader" class="page-loader" aria-hidden="true">
+    <div class="page-loader-card">
+      <div class="page-loader-spinner"></div>
+      <div id="pageLoaderText" class="page-loader-text">Loading...</div>
+    </div>
+  </div>
+
+  <script src="/js/pending-stock-counts.js"></script>
+</body>
+</html>

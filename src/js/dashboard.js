@@ -6,6 +6,16 @@ function setText(id, value) {
 let currentUser = null;
 let selectedArea = localStorage.getItem("selectedArea") || "";
 
+function clearStnDraftState() {
+  localStorage.removeItem("stnDraftData");
+  localStorage.removeItem("stnLastSubmitted");
+  localStorage.removeItem("stnPreviewData");
+  localStorage.removeItem("stnCurrentEditId");
+  sessionStorage.removeItem("stnDraftData");
+  sessionStorage.removeItem("stnPreviewData");
+  sessionStorage.removeItem("stnCurrentEditId");
+}
+
 function refreshSelectedArea() {
   setText("selectedArea", selectedArea || "None");
 }
@@ -69,9 +79,25 @@ function renderBusinessAreaButtons() {
 
 function renderManagerActions() {
   const teamDraftsBtn = document.getElementById("teamDraftsBtn");
-  if (!teamDraftsBtn) return;
+  const assignStockCountBtn = document.getElementById("assignStockCountBtn");
+  const assignedStockCountsBtn = document.getElementById("assignedStockCountsBtn");
+  const myPendingStockCountsBtn = document.getElementById("myPendingStockCountsBtn");
 
-  teamDraftsBtn.style.display = currentUser?.IsManager ? "inline-block" : "none";
+  if (teamDraftsBtn) {
+    teamDraftsBtn.style.display = currentUser?.IsManager ? "inline-block" : "none";
+  }
+
+  if (assignStockCountBtn) {
+    assignStockCountBtn.style.display = currentUser?.IsManager ? "inline-block" : "none";
+  }
+
+  if (assignedStockCountsBtn) {
+    assignedStockCountsBtn.style.display = currentUser?.IsManager ? "inline-block" : "none";
+  }
+
+  if (myPendingStockCountsBtn) {
+    myPendingStockCountsBtn.style.display = currentUser?.IsManager ? "none" : "inline-block";
+  }
 }
 
 function canUseSelectedArea() {
@@ -159,12 +185,14 @@ async function loadUserAccess() {
 
 document.getElementById("postInboundBtn")?.addEventListener("click", () => {
   if (!canUseSelectedArea()) return;
-  window.location.href = `/stn-entry.html?type=IN&area=${encodeURIComponent(selectedArea)}`;
+  clearStnDraftState();
+  window.location.href = `/stn-entry.html?type=IN&area=${encodeURIComponent(selectedArea)}&mode=new`;
 });
 
 document.getElementById("postOutboundBtn")?.addEventListener("click", () => {
   if (!canUseSelectedArea()) return;
-  window.location.href = `/stn-entry.html?type=OB&area=${encodeURIComponent(selectedArea)}`;
+  clearStnDraftState();
+  window.location.href = `/stn-entry.html?type=OB&area=${encodeURIComponent(selectedArea)}&mode=new`;
 });
 
 document.getElementById("checkSTNBtn")?.addEventListener("click", () => {
@@ -184,9 +212,17 @@ document.getElementById("reconcileStockBtn")?.addEventListener("click", () => {
   window.location.href = "/reconcile-stock.html";
 });
 
-document.getElementById("startStockCountBtn")?.addEventListener("click", () => {
+document.getElementById("assignStockCountBtn")?.addEventListener("click", () => {
   if (!canUseSelectedArea()) return;
-  window.location.href = "/start-stock-count.html";
+  window.location.href = "/assign-stock-count.html";
+});
+
+document.getElementById("myPendingStockCountsBtn")?.addEventListener("click", () => {
+  window.location.href = "/pending-stock-counts.html";
+});
+
+document.getElementById("assignedStockCountsBtn")?.addEventListener("click", () => {
+  window.location.href = "/assigned-stock-counts.html";
 });
 
 document.getElementById("logoutBtn")?.addEventListener("click", async () => {

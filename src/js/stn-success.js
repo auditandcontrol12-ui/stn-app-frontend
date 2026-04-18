@@ -35,6 +35,14 @@ function formatPrintDate(value) {
   }
 }
 
+function getTxnTypeDisplay(value) {
+  const map = {
+    IN: "IN-BOUND",
+    OB: "OUT-BOUND"
+  };
+  return map[value] || value || "";
+}
+
 function escapeHtml(value) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -253,8 +261,8 @@ async function loadSubmittedSTN() {
     document.title = h.STNNumber || "STN";
 
     setText("scStnNumber", h.STNNumber);
-    setText("scStnId", h.STNId);
-    setText("scStnType", h.STNType);
+    setText("scStnSeqNo", h.STNSeqNo);
+    setText("scStnType", getTxnTypeDisplay(h.STNType));
     setText("scStatus", h.Status);
     setText("scWarehouseFrom", warehouseFromText);
     setText("scWarehouseTo", warehouseToText);

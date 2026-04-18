@@ -40,7 +40,7 @@ async function getSessionUser(pool, sessionId) {
   return row;
 }
 
-app.http("startStockCount", {
+app.http("deleteStockCount", {
   methods: ["POST"],
   authLevel: "anonymous",
   handler: async (request, context) => {
@@ -77,21 +77,24 @@ app.http("startStockCount", {
         };
       }
 
+      if (!sessionUser.IsManager) {
+        return {
+          status: 403,
+          jsonBody: { success: false, message: "Only managers can delete stock counts." }
+        };
+      }
+
       const headerResult = await pool.request()
         .input("StockCountId", sql.BigInt, stockCountId)
         .query(`
           SELECT TOP 1
               StockCountId,
               CountNumber,
-              BusinessArea,
               Status,
-              AssignedToUserName,
+              BusinessArea,
               AssignedToUserEmail,
-              AssignedBy,
+              AssignedToUserName,
               AssignedByEmail,
-              StartedBy,
-              StartedByEmail,
-              StartedDateTime,
               IsDeleted
           FROM STNAPP.StockCountHeader
           WHERE StockCountId = @StockCountId;
@@ -105,57 +108,11 @@ app.http("startStockCount", {
       }
 
       const header = headerResult.recordset[0];
-      const currentEmail = (sessionUser.UserEmail || "").toLowerCase();
-      const assignedToEmail = (header.AssignedToUserEmail || "").toLowerCase();
 
       if (header.IsDeleted || header.Status === "Deleted") {
         return {
           status: 400,
-          jsonBody: { success: false, message: "Deleted stock count cannot be started." }
-        };
-      }
-
-      if (header.Status === "Submitted") {
-        return {
-          status: 400,
-          jsonBody: { success: false, message: "Submitted stock count cannot be started." }
-        };
-      }
-
-      if (
-        (header.BusinessArea === "Manufacturing" && !sessionUser.IsAllowedManufacturing && !sessionUser.IsManager) ||
-        (header.BusinessArea === "Distribution" && !sessionUser.IsAllowedDistribution && !sessionUser.IsManager)
-      ) {
-        return {
-          status: 403,
-          jsonBody: { success: false, message: "Access denied for selected business area." }
-        };
-      }
-
-      if (!sessionUser.IsManager && currentEmail !== assignedToEmail) {
-        return {
-          status: 403,
-          jsonBody: { success: false, message: "Only assigned supervisor can start this stock count." }
-        };
-      }
-
-      if (header.Status === "In Progress") {
-        return {
-          status: 200,
-          jsonBody: {
-            success: true,
-            stockCountId,
-            countNumber: header.CountNumber,
-            status: header.Status,
-            message: "Stock count is already in progress."
-          }
-        };
-      }
-
-      if (header.Status !== "Assigned") {
-        return {
-          status: 400,
-          jsonBody: { success: false, message: "Only assigned stock counts can be started." }
+          jsonBody: { success: false, message: "Stock count is already deleted." }
         };
       }
 
@@ -164,17 +121,18 @@ app.http("startStockCount", {
 
       await new sql.Request(transaction)
         .input("StockCountId", sql.BigInt, stockCountId)
-        .input("StartedBy", sql.NVarChar(400), sessionUser.UserName || "")
-        .input("StartedByEmail", sql.NVarChar(510), sessionUser.UserEmail || "")
+        .input("DeletedBy", sql.NVarChar(400), sessionUser.UserName || "")
+        .input("DeletedByEmail", sql.NVarChar(510), sessionUser.UserEmail || "")
         .query(`
           UPDATE STNAPP.StockCountHeader
           SET
-              Status = 'In Progress',
-              StartedBy = @StartedBy,
-              StartedByEmail = @StartedByEmail,
-              StartedDateTime = SYSDATETIME(),
-              UpdatedBy = @StartedBy,
-              UpdatedByEmail = @StartedByEmail,
+              Status = 'Deleted',
+              IsDeleted = 1,
+              DeletedBy = @DeletedBy,
+              DeletedByEmail = @DeletedByEmail,
+              DeletedDateTime = SYSDATETIME(),
+              UpdatedBy = @DeletedBy,
+              UpdatedByEmail = @DeletedByEmail,
               UpdatedDateTime = SYSDATETIME()
           WHERE StockCountId = @StockCountId;
         `);
@@ -185,9 +143,7 @@ app.http("startStockCount", {
         status: 200,
         jsonBody: {
           success: true,
-          stockCountId,
-          countNumber: header.CountNumber,
-          status: "In Progress"
+          stockCountId
         }
       };
     } catch (error) {
@@ -195,7 +151,7 @@ app.http("startStockCount", {
         if (transaction) await transaction.rollback();
       } catch {}
 
-      context.log("startStockCount error", error);
+      context.log("deleteStockCount error", error);
 
       return {
         status: 500,

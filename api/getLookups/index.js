@@ -12,8 +12,10 @@ async function getSessionUser(pool, sessionId) {
           s.IsRevoked,
           u.UserID,
           u.UserEmail,
+          u.UserName,
           u.IsAllowedManufacturing,
           u.IsAllowedDistribution,
+          u.IsManager,
           u.IsActive,
           u.IsDeleted
       FROM STNAPP.UserSession s
@@ -22,7 +24,7 @@ async function getSessionUser(pool, sessionId) {
       WHERE s.SessionID = @SessionID;
     `);
 
-  if (result.recordset.length === 0) return null;
+  if (!result.recordset.length) return null;
 
   const row = result.recordset[0];
 
@@ -41,9 +43,12 @@ async function getSessionUser(pool, sessionId) {
 app.http("getLookups", {
   methods: ["GET"],
   authLevel: "anonymous",
-  handler: async (request) => {
+  handler: async (request, context) => {
     try {
-      const area = request.query.get("area");
+      const url = new URL(request.url);
+      const area = (url.searchParams.get("area") || "").trim();
+      const mode = (url.searchParams.get("mode") || "").trim();
+
       const cookieName = process.env.SESSION_COOKIE_NAME || "stn_session";
       const sessionId = readCookie(request, cookieName);
 
@@ -57,16 +62,6 @@ app.http("getLookups", {
         };
       }
 
-      if (!area || !["Distribution", "Manufacturing"].includes(area)) {
-        return {
-          status: 400,
-          jsonBody: {
-            success: false,
-            message: "Valid area is required."
-          }
-        };
-      }
-
       const pool = await getPool();
       const sessionUser = await getSessionUser(pool, sessionId);
 
@@ -76,6 +71,58 @@ app.http("getLookups", {
           jsonBody: {
             success: false,
             message: "Unauthorized."
+          }
+        };
+      }
+
+      if (mode === "assignableUsers") {
+        if (!sessionUser.IsManager) {
+          return {
+            status: 403,
+            jsonBody: {
+              success: false,
+              message: "Only managers can view assignable users."
+            }
+          };
+        }
+
+        const usersResult = await pool.request()
+          .input("CurrentUserEmail", sql.NVarChar(1020), sessionUser.UserEmail || "")
+          .query(`
+            SELECT
+                UserEmail,
+                UserName,
+                HoldingName,
+                UserRole,
+                IsAllowedManufacturing,
+                IsAllowedDistribution,
+                IsActive,
+                IsManager
+            FROM STNAPP.Users
+            WHERE
+                IsActive = 1
+                AND ISNULL(IsDeleted, 0) = 0
+                AND ISNULL(IsManager, 0) = 0
+                AND LOWER(UserEmail) <> LOWER(@CurrentUserEmail)
+            ORDER BY UserName, UserEmail;
+          `);
+
+        return {
+          status: 200,
+          jsonBody: {
+            success: true,
+            mode: "assignableUsers",
+            users: usersResult.recordset
+          }
+        };
+      }
+
+      if (!area || !["Distribution", "Manufacturing"].includes(area)) {
+        return {
+          status: 400,
+          jsonBody: {
+            success: false,
+            message: "Valid area is required."
           }
         };
       }
@@ -102,7 +149,7 @@ app.http("getLookups", {
               ItemCode,
               ItemName,
               UOM
-          FROM dist.FactCustomItemAttribute
+          FROM stnapp.FactItemAttributeDist
           WHERE IsActive = 1
           ORDER BY ItemCode;
         `;
@@ -114,7 +161,7 @@ app.http("getLookups", {
               Branch,
               Location,
               WhsType
-          FROM dist.FactCustomWhsAttributes
+          FROM stnapp.FactWhsAttributeDist
           WHERE IsActive = 1
           ORDER BY WhsCode;
         `;
@@ -124,7 +171,7 @@ app.http("getLookups", {
               ItemCode,
               ItemName,
               UOM
-          FROM manu.FactCustomItemAttribute
+          FROM stnapp.FactItemAttributeManu
           WHERE IsActive = 1
           ORDER BY ItemCode;
         `;
@@ -136,7 +183,7 @@ app.http("getLookups", {
               Branch,
               Location,
               WhsType
-          FROM manu.FactCustomWhsAttributes
+          FROM stnapp.FactWhsAttributeManu
           WHERE IsActive = 1
           ORDER BY WhsCode;
         `;
@@ -155,6 +202,8 @@ app.http("getLookups", {
         }
       };
     } catch (error) {
+      context.log("getLookups error", error);
+
       return {
         status: 500,
         jsonBody: {

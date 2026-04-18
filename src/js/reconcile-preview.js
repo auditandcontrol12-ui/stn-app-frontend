@@ -3,6 +3,15 @@ function setText(id, value) {
   if (el) el.textContent = value ?? "";
 }
 
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
 function loadReconcileResult() {
   const raw = localStorage.getItem("stnReconcileResult");
   if (!raw) return null;
@@ -29,11 +38,10 @@ function formatQty(value) {
 
 function renderPreview() {
   const data = loadReconcileResult();
-  const output = document.getElementById("reconcilePreviewOutput");
   const body = document.getElementById("reconcileLinesContainer");
 
   if (!data) {
-    if (output) output.textContent = "No reconcile result found.";
+    alert("No reconcile result found.");
     return;
   }
 
@@ -59,10 +67,10 @@ function renderPreview() {
     rows.forEach((row) => {
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td>${row.ItemCode || ""}</td>
-        <td>${row.ItemName || ""}</td>
-        <td>${row.UOM || ""}</td>
-        <td>${row.BatchNumber || ""}</td>
+        <td>${escapeHtml(row.ItemCode || "")}</td>
+        <td>${escapeHtml(row.ItemName || "")}</td>
+        <td>${escapeHtml(row.UOM || "")}</td>
+        <td>${escapeHtml(row.BatchNumber || "")}</td>
         <td>${formatQty(row.InQty)}</td>
         <td>${formatQty(row.OutQty)}</td>
         <td>${formatQty(row.NetQty)}</td>
@@ -70,8 +78,6 @@ function renderPreview() {
       body.appendChild(tr);
     });
   }
-
-  if (output) output.textContent = JSON.stringify(data, null, 2);
 }
 
 document.getElementById("backReconcileBtn")?.addEventListener("click", () => {
