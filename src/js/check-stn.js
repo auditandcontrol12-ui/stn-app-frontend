@@ -19,13 +19,28 @@ function formatDateTime(value) {
   }
 }
 
-function getPrintableType(stnType) {
-  if (!stnType) return "Stock Transfer Note";
-  const map = {
-    IN: "Stock Transfer Note - Inbound",
-    OB: "Stock Transfer Note - Outbound"
-  };
-  return map[stnType] || `Stock Transfer Note - ${stnType}`;
+function formatPrintDate(value) {
+  if (!value) return "-";
+  try {
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return value;
+    return d.toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "2-digit"
+    });
+  } catch {
+    return value;
+  }
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
 }
 
 function setSearchBanner(message, type) {
@@ -57,13 +72,182 @@ function canEditDraft(header, currentUser) {
   return isManager || isCreator;
 }
 
+function chunkArray(arr, size) {
+  const result = [];
+  for (let i = 0; i < arr.length; i += size) {
+    result.push(arr.slice(i, i + size));
+  }
+  return result;
+}
+
+function buildPrintRows(lines, rowsPerPage) {
+  const safeLines = Array.isArray(lines) ? lines : [];
+  const chunks = chunkArray(safeLines, rowsPerPage);
+  if (!chunks.length) chunks.push([]);
+
+  return chunks.map((pageLines) => {
+    let rowsHtml = "";
+
+    pageLines.forEach((line) => {
+      rowsHtml += `
+        <tr>
+          <td>${escapeHtml(line.ItemCode || "")}</td>
+          <td>${escapeHtml(line.ItemName || "")}</td>
+          <td>${escapeHtml(line.UOM || "")}</td>
+          <td class="num">${escapeHtml(line.Qty || "")}</td>
+          <td>${escapeHtml(line.BatchNumber || "")}</td>
+          <td>${escapeHtml(line.LineRemarks || "")}</td>
+        </tr>
+      `;
+    });
+
+    const blanks = Math.max(rowsPerPage - pageLines.length, 0);
+    for (let i = 0; i < blanks; i += 1) {
+      rowsHtml += `
+        <tr>
+          <td>&nbsp;</td>
+          <td>&nbsp;</td>
+          <td>&nbsp;</td>
+          <td class="num">&nbsp;</td>
+          <td>&nbsp;</td>
+          <td>&nbsp;</td>
+        </tr>
+      `;
+    }
+
+    return rowsHtml;
+  });
+}
+
+function renderCheckPrintPages(header, lines) {
+  const root = document.getElementById("checkPrintPages");
+  if (!root) return;
+
+  const warehouseFromText = warehouseDisplay(header.WarehouseFrom, header.WarehouseFromCustom);
+  const warehouseToText = warehouseDisplay(header.WarehouseTo, header.WarehouseToCustom);
+  const printDate = formatPrintDate(header.STNDate || header.SubmittedDateTime || header.CreatedDateTime);
+  const remarks = header.Remarks || "-";
+  const pages = buildPrintRows(lines || [], 22);
+
+  root.innerHTML = pages.map((rowsHtml, pageIndex) => `
+    <div class="stn-print-sheet">
+      <div class="stn-print-header">
+        <div class="stn-print-header-left">
+          <img src="/assets/PrintLogo.png" alt="Print Logo" class="print-logo" />
+        </div>
+
+        <div class="stn-print-header-center">
+          <div class="stn-print-title-row">
+            <div class="stn-print-title-en">Stock Transfer Note</div>
+            <div class="stn-print-title-ar">نقل بضاعة</div>
+          </div>
+          <div class="stn-print-subtitle">Official Internal Document</div>
+        </div>
+
+        <div class="stn-print-header-right">
+          <div class="stn-print-meta-line">
+            <span>STO NUMBER</span>
+            <span>${escapeHtml(header.STNNumber || "-")}</span>
+          </div>
+          <div class="stn-print-meta-line">
+            <span>رقم التحويل</span>
+            <span>${escapeHtml(header.STNNumber || "-")}</span>
+          </div>
+          <div class="stn-print-meta-line">
+            <span>Date / التاريخ</span>
+            <span>${escapeHtml(printDate)}</span>
+          </div>
+          <div class="stn-print-meta-line">
+            <span>Status</span>
+            <span>${escapeHtml(header.Status || "")}</span>
+          </div>
+          <div class="stn-print-meta-line">
+            <span>Page</span>
+            <span>${pageIndex + 1} / ${pages.length}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="stn-print-route">
+        <div class="stn-print-route-box">
+          <div class="stn-route-label">From / من</div>
+          <div class="stn-route-value">${escapeHtml(warehouseFromText)}</div>
+        </div>
+        <div class="stn-print-route-box">
+          <div class="stn-route-label">To / إلى</div>
+          <div class="stn-route-value">${escapeHtml(warehouseToText)}</div>
+        </div>
+      </div>
+
+      <table class="stn-print-table">
+        <thead>
+          <tr>
+            <th class="w-code"><div>Code / الرمز</div></th>
+            <th class="w-desc"><div>Product Description / وصف المنتج</div></th>
+            <th class="w-uom"><div>UOM</div></th>
+            <th class="w-qty"><div>Quantity EA</div></th>
+            <th class="w-batch">
+              <div>Batch Number</div>
+              <div class="ar">رقم التشغيل</div>
+            </th>
+            <th class="w-remarks">
+              <div>Remarks</div>
+              <div class="ar">ملاحظات</div>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHtml}
+        </tbody>
+      </table>
+
+      <div class="stn-print-footer">
+        <div class="stn-print-comments">
+          <div class="stn-comments-label">Comments / ملاحظة:</div>
+          <div class="stn-comments-value">${escapeHtml(remarks)}</div>
+        </div>
+
+        <div class="stn-print-signatures">
+          <div class="stn-sign-block">
+            <div class="stn-sign-title">Issued by / اعداد</div>
+            <div class="stn-sign-line"></div>
+            <div class="stn-sign-name">${escapeHtml(header.CreatedBy || "")}</div>
+            <div class="stn-sign-note">Signature / التوقيع</div>
+          </div>
+
+          <div class="stn-sign-block">
+            <div class="stn-sign-title">QC Officer</div>
+            <div class="stn-sign-line"></div>
+            <div class="stn-sign-name">&nbsp;</div>
+            <div class="stn-sign-note">Signature / التوقيع</div>
+          </div>
+
+          <div class="stn-sign-block">
+            <div class="stn-sign-title">Received By / المستلم</div>
+            <div class="stn-sign-line"></div>
+            <div class="stn-sign-name">&nbsp;</div>
+            <div class="stn-sign-note">Signature / التوقيع</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `).join("");
+}
+
 let lastFoundSTN = null;
 
 function hideSearchActions() {
-  document.getElementById("searchResultWrap")?.style && (document.getElementById("searchResultWrap").style.display = "none");
-  document.getElementById("searchPrintBtn")?.style && (document.getElementById("searchPrintBtn").style.display = "none");
-  document.getElementById("editSTNBtn")?.style && (document.getElementById("editSTNBtn").style.display = "none");
-  document.getElementById("deleteSTNBtn")?.style && (document.getElementById("deleteSTNBtn").style.display = "none");
+  const resultWrap = document.getElementById("searchResultWrap");
+  const printBtn = document.getElementById("searchPrintBtn");
+  const editBtn = document.getElementById("editSTNBtn");
+  const deleteBtn = document.getElementById("deleteSTNBtn");
+  const checkPrintPages = document.getElementById("checkPrintPages");
+
+  if (resultWrap) resultWrap.style.display = "none";
+  if (printBtn) printBtn.style.display = "none";
+  if (editBtn) editBtn.style.display = "none";
+  if (deleteBtn) deleteBtn.style.display = "none";
+  if (checkPrintPages) checkPrintPages.innerHTML = "";
 }
 
 async function searchSTN() {
@@ -85,6 +269,7 @@ async function searchSTN() {
     setSearchBanner("Searching STN...", "status-draft");
     if (output) output.textContent = "Searching...";
     lastFoundSTN = null;
+    showPageLoader?.("Searching STN...");
 
     const res = await fetch(`/api/getSTNBySeq?search=${encodeURIComponent(searchValue)}`, {
       credentials: "include"
@@ -98,6 +283,7 @@ async function searchSTN() {
     } catch {
       if (output) output.textContent = `Non-JSON response:\n${text}`;
       setSearchBanner("Unexpected response received.", "status-unsaved");
+      hidePageLoader?.();
       hideSearchActions();
       return;
     }
@@ -106,6 +292,7 @@ async function searchSTN() {
 
     if (!res.ok || !data.success) {
       setSearchBanner(data.message || "No data found.", "status-unsaved");
+      hidePageLoader?.();
       hideSearchActions();
       return;
     }
@@ -118,7 +305,6 @@ async function searchSTN() {
     const warehouseFromText = warehouseDisplay(h.WarehouseFrom, h.WarehouseFromCustom);
     const warehouseToText = warehouseDisplay(h.WarehouseTo, h.WarehouseToCustom);
     const submittedAtText = formatDateTime(h.SubmittedDateTime);
-    const printTitle = getPrintableType(h.STNType);
 
     document.title = h.STNNumber || "STN";
 
@@ -133,11 +319,6 @@ async function searchSTN() {
     setText("ckSubmittedAt", submittedAtText || "-");
     setText("ckRemarks", h.Remarks || "-");
 
-    setText("checkPrintTitle", printTitle);
-    setText("checkPrintStnNumber", h.STNNumber);
-    setText("checkPrintStatus", h.Status);
-    setText("checkPreparedBy", h.CreatedBy);
-
     if (linesBody) {
       linesBody.innerHTML = "";
 
@@ -145,16 +326,18 @@ async function searchSTN() {
         const tr = document.createElement("tr");
         tr.innerHTML = `
           <td class="col-line">${index + 1}</td>
-          <td>${line.ItemCode || ""}</td>
-          <td>${line.ItemName || ""}</td>
-          <td>${line.UOM || ""}</td>
-          <td>${line.BatchNumber || ""}</td>
-          <td>${line.Qty || ""}</td>
-          <td>${line.LineRemarks || ""}</td>
+          <td>${escapeHtml(line.ItemCode || "")}</td>
+          <td>${escapeHtml(line.ItemName || "")}</td>
+          <td>${escapeHtml(line.UOM || "")}</td>
+          <td>${escapeHtml(line.BatchNumber || "")}</td>
+          <td>${escapeHtml(line.Qty || "")}</td>
+          <td>${escapeHtml(line.LineRemarks || "")}</td>
         `;
         linesBody.appendChild(tr);
       });
     }
+
+    renderCheckPrintPages(h, lines);
 
     const currentUser = getCurrentUser();
     const isManager = !!currentUser?.IsManager;
@@ -166,9 +349,11 @@ async function searchSTN() {
     if (deleteBtn) deleteBtn.style.display = isManager ? "inline-block" : "none";
 
     setSearchBanner(`STN found successfully. Status: ${h.Status}`, "status-submitted");
+    hidePageLoader?.();
   } catch (err) {
     if (output) output.textContent = `Error: ${err.message}`;
     setSearchBanner(`Error: ${err.message}`, "status-unsaved");
+    hidePageLoader?.();
     hideSearchActions();
   }
 }
@@ -183,6 +368,7 @@ document.getElementById("searchSeqNo")?.addEventListener("keydown", (e) => {
 });
 
 document.getElementById("searchPrintBtn")?.addEventListener("click", () => {
+  if (!lastFoundSTN) return;
   window.print();
 });
 
@@ -211,6 +397,7 @@ document.getElementById("deleteSTNBtn")?.addEventListener("click", async () => {
 
   try {
     if (output) output.textContent = "Deleting STN...";
+    showPageLoader?.("Deleting STN...");
 
     const res = await fetch("/api/deleteSTN", {
       method: "POST",
@@ -228,6 +415,7 @@ document.getElementById("deleteSTNBtn")?.addEventListener("click", async () => {
       data = JSON.parse(text);
     } catch {
       if (output) output.textContent = `Non-JSON response:\n${text}`;
+      hidePageLoader?.();
       alert("Unexpected response received.");
       return;
     }
@@ -235,6 +423,7 @@ document.getElementById("deleteSTNBtn")?.addEventListener("click", async () => {
     if (output) output.textContent = JSON.stringify(data, null, 2);
 
     if (!res.ok || !data.success) {
+      hidePageLoader?.();
       alert(data.message || "Delete failed.");
       return;
     }
@@ -242,9 +431,11 @@ document.getElementById("deleteSTNBtn")?.addEventListener("click", async () => {
     lastFoundSTN = null;
     hideSearchActions();
     setSearchBanner("STN deleted successfully.", "status-submitted");
+    hidePageLoader?.();
     alert("STN deleted successfully.");
   } catch (err) {
     if (output) output.textContent = `Error: ${err.message}`;
+    hidePageLoader?.();
     alert(err.message);
   }
 });

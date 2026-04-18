@@ -25,25 +25,8 @@
       </div>
     </div>
 
-    <div class="print-header print-only-block">
-      <div class="print-header-left">
-        <img src="/assets/PrintLogo.jpeg" alt="Print Logo" class="print-logo" />
-      </div>
-      <div class="print-header-center">
-        <div class="print-org">Business Data and Internal Control</div>
-        <div class="print-title" id="draftPrintTitle">Draft Stock Transfer Note</div>
-        <div class="print-subtitle">Official Internal Document</div>
-      </div>
-      <div class="print-header-right">
-        <div class="print-doc-meta">
-          <div><strong>STN No:</strong> <span id="draftPrintStnNumber"></span></div>
-          <div><strong>Status:</strong> <span id="draftPrintStatus"></span></div>
-        </div>
-      </div>
-    </div>
-
     <div class="page-shell">
-      <div class="card print-card">
+      <div class="card print-card no-print">
         <div class="section-title">Document Summary</div>
         <div class="summary-grid print-summary-grid">
           <div class="summary-item">
@@ -89,12 +72,12 @@
         </div>
       </div>
 
-      <div class="card print-card">
+      <div class="card print-card no-print">
         <div class="section-title">Remarks</div>
         <div id="pvRemarks" class="info-banner"></div>
       </div>
 
-      <div class="card print-card">
+      <div class="card print-card no-print">
         <div class="section-title">Line Preview</div>
         <div class="lines-table-wrap print-lines-wrap">
           <table class="lines-table print-lines-table">
@@ -114,20 +97,7 @@
         </div>
       </div>
 
-      <div class="card print-card print-only-block">
-        <div class="print-signatures">
-          <div class="print-sign-box">
-            <div class="print-sign-label">Prepared By</div>
-            <div class="print-sign-line"></div>
-            <div class="print-sign-name" id="draftPrintPreparedBy"></div>
-          </div>
-          <div class="print-sign-box">
-            <div class="print-sign-label">Authorized Sign</div>
-            <div class="print-sign-line"></div>
-            <div class="print-sign-name">Sign</div>
-          </div>
-        </div>
-      </div>
+      <div id="draftPrintPages" class="print-only-block"></div>
 
       <div class="card soft no-print">
         <div class="action-row">
@@ -144,6 +114,15 @@
     </div>
   </div>
 
+<script src="/js/app.js"></script>
+
+<div id="pageLoader" class="page-loader" aria-hidden="true">
+  <div class="page-loader-card">
+    <div class="page-loader-spinner"></div>
+    <div id="pageLoaderText" class="page-loader-text">Loading...</div>
+  </div>
+</div>
+
   <script src="/js/stn-preview.js"></script>
 </body>
-</html> 
+</html>
