@@ -10,10 +10,10 @@
   <div class="container">
     <div class="top-hero">
       <div>
-        <span class="hero-badge">Access Control</span>
+        <span class="hero-badge">Operations Workspace</span>
         <h1>Dashboard</h1>
         <div class="page-subtitle">
-          Signed-in user details and allowed business areas.
+          Access your business area, create STN transactions, manage drafts, and move into stock operations.
         </div>
       </div>
     </div>
@@ -45,43 +45,84 @@
         </div>
       </div>
 
-      <div class="card">
-        <div class="section-title">Business Area</div>
-        <div class="header-strip" id="businessAreaButtons"></div>
-      </div>
+      <div class="dashboard-grid">
+        <div class="card soft workspace-card">
+          <div class="workspace-kicker">Divisions</div>
+            <div class="section-title">Business Area</div>
+          <div class="workspace-text">
+    Choose the active area before starting a workflow.
+  </div>
+          <div class="top-actions" id="businessAreaButtons"></div>
+        </div>
 
-      <div class="card soft">
-        <div class="section-title">Create STN</div>
-        <div class="action-row">
-          <button id="postInboundBtn">Post Inbound</button>
-          <button id="postOutboundBtn">Post Outbound</button>
+        <div class="card soft workspace-card">
+          <div class="workspace-kicker">Transactions</div>
+          <div class="section-title">Create STN</div>
+          <div class="workspace-text">
+            Start a new inbound or outbound stock transfer note for the selected business area.
+          </div>
+          <div class="top-actions">
+            <button id="postInboundBtn">Post Inbound</button>
+            <button id="postOutboundBtn">Post Outbound</button>
+          </div>
+        </div>
+
+        <div class="card soft workspace-card">
+          <div class="workspace-kicker">Workbench</div>
+          <div class="section-title">STN Workbench</div>
+          <div class="workspace-text">
+            Check existing STN records, continue your drafts, or review team drafts where permitted.
+          </div>
+          <div class="top-actions">
+            <button id="checkSTNBtn" class="success">Check STN</button>
+            <button id="myDraftsBtn">My Drafts</button>
+            <button id="teamDraftsBtn" style="display:none;">Team Drafts</button>
+          </div>
+        </div>
+
+        <div class="card soft workspace-card">
+          <div class="workspace-kicker">Inventory Control</div>
+          <div class="section-title">Stock Count</div>
+          <div class="workspace-text">
+            Start stock count activities, assign tasks, and review pending or assigned count sheets.
+          </div>
+          <div class="top-actions">
+            <button id="startStockCountBtn" disabled title="Coming Soon">Start Stock Count - Coming Soon</button>
+            <button id="assignStockCountBtn" style="display:none;">Assign Stock Count</button>
+            <button id="myPendingStockCountsBtn">My Pending Stock Counts</button>
+            <button id="assignedStockCountsBtn" class="success" style="display:none;">Assigned Stock Counts</button>
+          </div>
+        </div>
+
+        <div class="card soft workspace-card">
+          <div class="workspace-kicker">Controls</div>
+          <div class="section-title">Reconcile</div>
+          <div class="workspace-text">
+            Move into reconciliation workflows for stock review and control checks.
+          </div>
+          <div class="top-actions">
+            <button id="reconcileStockBtn">Reconcile Stock</button>
+          </div>
+        </div>
+
+        <div class="card soft workspace-card">
+          <div class="workspace-kicker">Session</div>
+          <div class="section-title">Sign Out</div>
+          <div class="workspace-text">
+            End the current session securely when your work is complete.
+          </div>
+          <div class="top-actions">
+            <button id="logoutBtn" class="secondary">Logout</button>
+          </div>
         </div>
       </div>
 
-      <div class="card soft">
-        <div class="section-title">STN Workbench</div>
-        <div class="action-row">
-          <button id="checkSTNBtn" class="success">Check STN</button>
-          <button id="myDraftsBtn">My Drafts</button>
-          <button id="teamDraftsBtn" style="display:none;">Team Drafts</button>
-        </div>
-      </div>
+      <script src="/js/app.js"></script>
 
-      <div class="card soft">
-        <div class="section-title">Stock Count</div>
-        <div class="action-row">
-          <button id="startStockCountBtn" disabled title="Coming Soon">Start Stock Count - Coming Soon</button>
-          <button id="assignStockCountBtn" style="display:none;">Assign Stock Count</button>
-          <button id="myPendingStockCountsBtn">My Pending Stock Counts</button>
-          <button id="assignedStockCountsBtn" class="success" style="display:none;">Assigned Stock Counts</button>
-        </div>
-      </div>
-
-      <div class="card soft">
-        <div class="section-title">Reconcile</div>
-        <div class="action-row">
-          <button id="reconcileStockBtn">Reconcile Stock</button>
-          <button id="logoutBtn" class="secondary">Logout</button>
+      <div id="pageLoader" class="page-loader" aria-hidden="true">
+        <div class="page-loader-card">
+          <div class="page-loader-spinner"></div>
+          <div id="pageLoaderText" class="page-loader-text">Loading dashboard...</div>
         </div>
       </div>
 

@@ -47,7 +47,7 @@ function renderPreview() {
 
   const filters = data.filters || {};
   const meta = data.meta || {};
-  const rows = data.rows || [];
+  const rows = Array.isArray(data.rows) ? data.rows : [];
 
   setText("rcArea", filters.area || "");
   setText("rcWarehouse", `${filters.warehouse || ""} - ${filters.warehouseName || ""}`);
@@ -62,21 +62,29 @@ function renderPreview() {
   document.title = `Reconcile - ${filters.warehouse || "Warehouse"} - ${formatDate(filters.startDate)} to ${formatDate(filters.endDate)}`;
 
   if (body) {
-    body.innerHTML = "";
-
-    rows.forEach((row) => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${escapeHtml(row.ItemCode || "")}</td>
-        <td>${escapeHtml(row.ItemName || "")}</td>
-        <td>${escapeHtml(row.UOM || "")}</td>
-        <td>${escapeHtml(row.BatchNumber || "")}</td>
-        <td>${formatQty(row.InQty)}</td>
-        <td>${formatQty(row.OutQty)}</td>
-        <td>${formatQty(row.NetQty)}</td>
+    if (!rows.length) {
+      body.innerHTML = `
+        <tr>
+          <td colspan="7" style="text-align:center;">No reconciliation rows found.</td>
+        </tr>
       `;
-      body.appendChild(tr);
-    });
+    } else {
+      body.innerHTML = "";
+
+      rows.forEach((row) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${escapeHtml(row.ItemCode || "")}</td>
+          <td>${escapeHtml(row.ItemName || "")}</td>
+          <td>${escapeHtml(row.UOM || "")}</td>
+          <td>${escapeHtml(row.BatchNumber || "")}</td>
+          <td>${formatQty(row.InQty)}</td>
+          <td>${formatQty(row.OutQty)}</td>
+          <td>${formatQty(row.NetQty)}</td>
+        `;
+        body.appendChild(tr);
+      });
+    }
   }
 }
 
@@ -88,4 +96,9 @@ document.getElementById("printReconcileBtn")?.addEventListener("click", () => {
   window.print();
 });
 
-renderPreview();
+showPageLoader?.("Loading reconcile preview...");
+try {
+  renderPreview();
+} finally {
+  hidePageLoader?.();
+}

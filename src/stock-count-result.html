@@ -13,7 +13,7 @@
         <span class="hero-badge">Stock Count Result</span>
         <h1>Stock Count Submitted</h1>
         <div class="page-subtitle">
-          Review and print the final stock count report.
+          Review the final result and print the official stock count report.
         </div>
       </div>
     </div>
@@ -60,6 +60,8 @@
 
       <div class="card print-card">
         <div class="section-title">Count Lines</div>
+        <div class="section-subtitle no-print">Final counted quantity versus system quantity and calculated variance.</div>
+
         <div class="lines-table-wrap print-lines-wrap">
           <table class="lines-table print-lines-table">
             <thead>
@@ -104,6 +106,13 @@
   </div>
 
   <script src="/js/app.js"></script>
+  <div id="pageLoader" class="page-loader" aria-hidden="true">
+    <div class="page-loader-card">
+      <div class="page-loader-spinner"></div>
+      <div id="pageLoaderText" class="page-loader-text">Loading...</div>
+    </div>
+  </div>
+
   <script src="/js/stock-count-result.js"></script>
 </body>
 </html>

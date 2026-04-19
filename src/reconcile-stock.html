@@ -13,7 +13,7 @@
         <span class="hero-badge">Reconcile</span>
         <h1>Reconcile Stock</h1>
         <div class="page-subtitle">
-          Select date range and warehouse, then generate stock reconciliation preview.
+          Select date range and warehouse, then generate stock reconciliation preview. The preview result is the output focus.
         </div>
       </div>
     </div>
@@ -21,6 +21,7 @@
     <div class="page-shell">
       <div class="card">
         <div class="section-title">Reconcile Filters</div>
+        <div class="section-subtitle">Set the filter values carefully before generating the reconciliation preview.</div>
 
         <div class="summary-grid">
           <div class="summary-item">
@@ -57,6 +58,14 @@
       <!-- <div class="card output-card">
         <pre id="reconcileOutput">Loading lookups...</pre>
       </div> -->
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <div id="pageLoader" class="page-loader" aria-hidden="true">
+    <div class="page-loader-card">
+      <div class="page-loader-spinner"></div>
+      <div id="pageLoaderText" class="page-loader-text">Loading...</div>
     </div>
   </div>
 

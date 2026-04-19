@@ -32,11 +32,12 @@ async function loadLookups() {
   if (areaEl) areaEl.textContent = area || "-";
 
   if (!area) {
-    setOutput("Select Business Area from dashboard first.");
+    alert("Select Business Area from dashboard first.");
     return;
   }
 
   try {
+    showPageLoader?.("Loading warehouse lookups...");
     setOutput(`Loading warehouse lookups for ${area}...`);
 
     const res = await fetch(`/api/getLookups?area=${encodeURIComponent(area)}`, {
@@ -50,6 +51,7 @@ async function loadLookups() {
       data = JSON.parse(text);
     } catch {
       setOutput(`Non-JSON response:\n${text}`);
+      alert("Invalid response received from server.");
       return;
     }
 
@@ -65,10 +67,13 @@ async function loadLookups() {
     const startEl = document.getElementById("reconcileStartDate");
     const endEl = document.getElementById("reconcileEndDate");
 
-    if (startEl) startEl.value = todayString();
-    if (endEl) endEl.value = todayString();
+    if (startEl && !startEl.value) startEl.value = todayString();
+    if (endEl && !endEl.value) endEl.value = todayString();
   } catch (err) {
     setOutput(`Error: ${err.message}`);
+    alert(err.message);
+  } finally {
+    hidePageLoader?.();
   }
 }
 
@@ -88,12 +93,18 @@ document.getElementById("generateReconcileBtn")?.addEventListener("click", async
     return;
   }
 
+  if (startDate > endDate) {
+    alert("Start date cannot be later than end date.");
+    return;
+  }
+
   if (!warehouse) {
     alert("Warehouse is required.");
     return;
   }
 
   try {
+    showPageLoader?.("Generating reconcile preview...");
     setOutput("Generating reconcile preview...");
 
     const res = await fetch("/api/selfReconcileStock", {
@@ -117,6 +128,7 @@ document.getElementById("generateReconcileBtn")?.addEventListener("click", async
       data = JSON.parse(text);
     } catch {
       setOutput(`Non-JSON response:\n${text}`);
+      alert("Invalid response received from server.");
       return;
     }
 
@@ -131,6 +143,9 @@ document.getElementById("generateReconcileBtn")?.addEventListener("click", async
     window.location.href = "/reconcile-preview.html";
   } catch (err) {
     setOutput(`Error: ${err.message}`);
+    alert(err.message);
+  } finally {
+    hidePageLoader?.();
   }
 });
 

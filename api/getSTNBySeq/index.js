@@ -115,6 +115,13 @@ app.http("getSTNBySeq", {
                 DeletedBy,
                 DeletedByEmail,
                 DeletedDateTime,
+                SignedDocumentFileName,
+                SignedDocumentBlobName,
+                SignedDocumentBlobUrl,
+                SignedDocumentUploadedByEmail,
+                SignedDocumentUploadedByName,
+                SignedDocumentUploadedDateTime,
+                IsSignedDocumentUploaded,
                 IsDeleted
             FROM STNAPP.STNHeader
             WHERE STNSeqNo = @SearchSeqNo
@@ -150,6 +157,13 @@ app.http("getSTNBySeq", {
                 DeletedBy,
                 DeletedByEmail,
                 DeletedDateTime,
+                SignedDocumentFileName,
+                SignedDocumentBlobName,
+                SignedDocumentBlobUrl,
+                SignedDocumentUploadedByEmail,
+                SignedDocumentUploadedByName,
+                SignedDocumentUploadedDateTime,
+                IsSignedDocumentUploaded,
                 IsDeleted
             FROM STNAPP.STNHeader
             WHERE STNNumber = @SearchText

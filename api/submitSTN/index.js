@@ -168,7 +168,9 @@ app.http("submitSTN", {
                 STNSeqNo,
                 BusinessArea,
                 Status,
-                IsDeleted
+                IsDeleted,
+                IsSignedDocumentUploaded,
+                SignedDocumentBlobName
             FROM STNAPP.STNHeader
             WHERE STNId = @STNId;
           `);
@@ -191,11 +193,27 @@ app.http("submitSTN", {
           };
         }
 
+        if (existing.Status === "Submitted") {
+          await transaction.rollback();
+          return {
+            status: 400,
+            jsonBody: { success: false, message: "Submitted STN cannot be modified." }
+          };
+        }
+
         if (!sessionUser.allowedAreas.includes(existing.BusinessArea)) {
           await transaction.rollback();
           return {
             status: 403,
             jsonBody: { success: false, message: "Access denied." }
+          };
+        }
+
+        if (status === "Submitted" && (!existing.IsSignedDocumentUploaded || !existing.SignedDocumentBlobName)) {
+          await transaction.rollback();
+          return {
+            status: 400,
+            jsonBody: { success: false, message: "Signed PDF must be uploaded before submit." }
           };
         }
 
@@ -250,6 +268,14 @@ app.http("submitSTN", {
             WHERE STNId = @STNId;
           `);
       } else {
+        if (status === "Submitted") {
+          await transaction.rollback();
+          return {
+            status: 400,
+            jsonBody: { success: false, message: "Save as Draft first before submit." }
+          };
+        }
+
         const seqResult = await new sql.Request(transaction).query(`
           UPDATE STNAPP.STNSequence
           SET LastNumber = LastNumber + 1
@@ -282,8 +308,8 @@ app.http("submitSTN", {
           .input("Status", sql.NVarChar(120), status)
           .input("CreatedBy", sql.NVarChar(800), sessionUser.userName)
           .input("CreatedByEmail", sql.NVarChar(1020), sessionUser.userEmail)
-          .input("SubmittedBy", sql.NVarChar(800), status === "Submitted" ? sessionUser.userName : null)
-          .input("SubmittedByEmail", sql.NVarChar(1020), status === "Submitted" ? sessionUser.userEmail : null)
+          .input("SubmittedBy", sql.NVarChar(800), null)
+          .input("SubmittedByEmail", sql.NVarChar(1020), null)
           .query(`
             INSERT INTO STNAPP.STNHeader
             (
@@ -325,7 +351,7 @@ app.http("submitSTN", {
                 SYSDATETIME(),
                 @SubmittedBy,
                 @SubmittedByEmail,
-                CASE WHEN @Status = 'Submitted' THEN SYSDATETIME() ELSE NULL END,
+                NULL,
                 0
             );
           `);

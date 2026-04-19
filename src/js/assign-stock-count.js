@@ -116,7 +116,7 @@ function addLineRow(line = {}) {
     <td>
       <input class="line-batch-number" type="text" value="${escapeHtml(line.batchNumber || "")}" />
     </td>
-    <td>
+    <td class="col-actions">
       <button type="button" class="danger mini-btn remove-line-btn">Remove</button>
     </td>
   `;
@@ -172,6 +172,23 @@ function collectLines() {
       batchNumber
     };
   });
+}
+
+function validateAssignment(area, warehouseCode, assignedToUserEmail, lines) {
+  if (!area) return "Select Business Area first.";
+  if (!warehouseCode) return "Warehouse is required.";
+  if (!assignedToUserEmail) return "Supervisor is required.";
+  if (!lines.length) return "At least one line is required.";
+
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i];
+    const lineNoText = i + 1;
+
+    if (!line.itemCode) return `Line ${lineNoText}: Item Code is required.`;
+    if (!line.batchNumber) return `Line ${lineNoText}: Batch Number is required.`;
+  }
+
+  return "";
 }
 
 async function loadPageData() {
@@ -244,6 +261,7 @@ async function initPage() {
     setOutput("Ready.");
   } catch (err) {
     setOutput(`Error: ${err.message}`);
+    alert(err.message);
   } finally {
     hidePageLoader?.();
   }
@@ -261,8 +279,9 @@ document.getElementById("assignBtn")?.addEventListener("click", async () => {
     const remarks = qs("remarks")?.value?.trim() || "";
     const lines = collectLines();
 
-    if (!area) {
-      alert("Select Business Area first.");
+    const validationMessage = validateAssignment(area, warehouseCode, assignedToUserEmail, lines);
+    if (validationMessage) {
+      alert(validationMessage);
       return;
     }
 

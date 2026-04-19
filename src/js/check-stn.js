@@ -60,16 +60,18 @@ function getCurrentUser() {
   }
 }
 
-function canEditDraft(header, currentUser) {
+function canEditSTN(header, currentUser) {
   if (!header || !currentUser) return false;
-  if (header.Status !== "Draft") return false;
 
   const isManager = !!currentUser.IsManager;
   const isCreator =
     (currentUser.UserEmail || "").toLowerCase() ===
     (header.CreatedByEmail || "").toLowerCase();
 
-  return isManager || isCreator;
+  if (isManager) return true;
+  if (header.Status === "Draft" && isCreator) return true;
+
+  return false;
 }
 
 function chunkArray(arr, size) {
@@ -239,12 +241,14 @@ let lastFoundSTN = null;
 function hideSearchActions() {
   const resultWrap = document.getElementById("searchResultWrap");
   const printBtn = document.getElementById("searchPrintBtn");
+  const downloadBtn = document.getElementById("downloadAttachmentBtn");
   const editBtn = document.getElementById("editSTNBtn");
   const deleteBtn = document.getElementById("deleteSTNBtn");
   const checkPrintPages = document.getElementById("checkPrintPages");
 
   if (resultWrap) resultWrap.style.display = "none";
   if (printBtn) printBtn.style.display = "none";
+  if (downloadBtn) downloadBtn.style.display = "none";
   if (editBtn) editBtn.style.display = "none";
   if (deleteBtn) deleteBtn.style.display = "none";
   if (checkPrintPages) checkPrintPages.innerHTML = "";
@@ -256,6 +260,7 @@ async function searchSTN() {
   const linesBody = document.getElementById("checkLinesContainer");
   const resultWrap = document.getElementById("searchResultWrap");
   const printBtn = document.getElementById("searchPrintBtn");
+  const downloadBtn = document.getElementById("downloadAttachmentBtn");
   const editBtn = document.getElementById("editSTNBtn");
   const deleteBtn = document.getElementById("deleteSTNBtn");
 
@@ -341,10 +346,12 @@ async function searchSTN() {
 
     const currentUser = getCurrentUser();
     const isManager = !!currentUser?.IsManager;
-    const allowEdit = canEditDraft(h, currentUser);
+    const allowEdit = canEditSTN(h, currentUser);
+    const hasAttachment = !!h.IsSignedDocumentUploaded && !!h.SignedDocumentBlobUrl;
 
     if (resultWrap) resultWrap.style.display = "block";
     if (printBtn) printBtn.style.display = "inline-block";
+    if (downloadBtn) downloadBtn.style.display = hasAttachment ? "inline-block" : "none";
     if (editBtn) editBtn.style.display = allowEdit ? "inline-block" : "none";
     if (deleteBtn) deleteBtn.style.display = isManager ? "inline-block" : "none";
 
@@ -372,12 +379,24 @@ document.getElementById("searchPrintBtn")?.addEventListener("click", () => {
   window.print();
 });
 
+document.getElementById("downloadAttachmentBtn")?.addEventListener("click", () => {
+  if (!lastFoundSTN) return;
+
+  const h = lastFoundSTN.header;
+  if (!h.IsSignedDocumentUploaded || !h.SignedDocumentBlobUrl) {
+    alert("No attachment found.");
+    return;
+  }
+
+  window.open(`/api/downloadSignedSTN?stnId=${encodeURIComponent(h.STNId)}`, "_blank");
+});
+
 document.getElementById("editSTNBtn")?.addEventListener("click", () => {
   if (!lastFoundSTN) return;
 
   const currentUser = getCurrentUser();
-  if (!canEditDraft(lastFoundSTN.header, currentUser)) {
-    alert("Only the draft creator or a manager can edit this draft.");
+  if (!canEditSTN(lastFoundSTN.header, currentUser)) {
+    alert("Only the draft creator or a manager can edit this STN.");
     return;
   }
 

@@ -319,7 +319,11 @@ function collectFormData() {
     remarks: document.getElementById("remarks")?.value?.trim() || "",
     createdBy: user?.UserName || "",
     createdByEmail: user?.UserEmail || "",
-    status: savedDraft?.status === "Draft" ? "Draft" : "Unsaved",
+    status: savedDraft?.status === "Submitted" ? "Submitted" : (savedDraft?.status === "Draft" ? "Draft" : "Unsaved"),
+    isSignedDocumentUploaded: !!savedDraft?.isSignedDocumentUploaded,
+    signedDocumentFileName: savedDraft?.signedDocumentFileName || "",
+    signedDocumentBlobName: savedDraft?.signedDocumentBlobName || "",
+    signedDocumentBlobUrl: savedDraft?.signedDocumentBlobUrl || "",
     lines
   };
 }
@@ -505,6 +509,8 @@ function loadLookups() {
 function markDraftAsUnsavedIfNeeded() {
   const savedDraft = loadSavedDraft();
   if (savedDraft?.status === "Draft") {
+    savedDraft.status = "Unsaved";
+    localStorage.setItem("stnDraftData", JSON.stringify(savedDraft));
     setEntryStatus("Unsaved");
   }
 }
@@ -603,6 +609,10 @@ async function loadDraftFromDb(stnId) {
     createdBy: h.CreatedBy || "",
     createdByEmail: h.CreatedByEmail || "",
     status: h.Status || "Draft",
+    isSignedDocumentUploaded: !!h.IsSignedDocumentUploaded,
+    signedDocumentFileName: h.SignedDocumentFileName || "",
+    signedDocumentBlobName: h.SignedDocumentBlobName || "",
+    signedDocumentBlobUrl: h.SignedDocumentBlobUrl || "",
     lines: lines.map((line) => ({
       lineNu: line.LineNu,
       itemCode: line.ItemCode || "",

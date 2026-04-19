@@ -14,6 +14,15 @@ function setOutput(text) {
   if (el) el.textContent = text;
 }
 
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
 function renderSheet() {
   setText("schCountNumber", currentHeader?.CountNumber || "");
   setText("schWarehouse", `${currentHeader?.WarehouseCode || ""} - ${currentHeader?.WarehouseName || ""}`);
@@ -25,14 +34,23 @@ function renderSheet() {
 
   body.innerHTML = "";
 
+  if (!currentLines.length) {
+    body.innerHTML = `
+      <tr>
+        <td colspan="6" style="text-align:center;">No stock count lines found.</td>
+      </tr>
+    `;
+    return;
+  }
+
   currentLines.forEach((line, index) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td class="col-line">${index + 1}</td>
-      <td>${line.ItemCode || ""}</td>
-      <td>${line.ItemName || ""}</td>
-      <td>${line.UOM || ""}</td>
-      <td>${line.BatchNumber || ""}</td>
+      <td>${escapeHtml(line.ItemCode || "")}</td>
+      <td>${escapeHtml(line.ItemName || "")}</td>
+      <td>${escapeHtml(line.UOM || "")}</td>
+      <td>${escapeHtml(line.BatchNumber || "")}</td>
       <td>
         <input
           type="number"
@@ -49,7 +67,7 @@ function renderSheet() {
 
 async function loadStockCount() {
   if (!stockCountId) {
-    setOutput("stockCountId missing.");
+    alert("stockCountId missing.");
     return;
   }
 
@@ -68,6 +86,7 @@ async function loadStockCount() {
       data = JSON.parse(text);
     } catch {
       setOutput(`Non-JSON response:\n${text}`);
+      alert("Invalid response received from server.");
       return;
     }
 
@@ -78,8 +97,8 @@ async function loadStockCount() {
       return;
     }
 
-    currentHeader = data.header;
-    currentLines = data.lines || [];
+    currentHeader = data.header || null;
+    currentLines = Array.isArray(data.lines) ? data.lines : [];
 
     if (currentHeader?.BusinessArea) {
       localStorage.setItem("selectedArea", currentHeader.BusinessArea);
@@ -88,6 +107,7 @@ async function loadStockCount() {
     renderSheet();
   } catch (err) {
     setOutput(`Error: ${err.message}`);
+    alert(err.message);
   } finally {
     hidePageLoader?.();
   }
@@ -106,6 +126,12 @@ document.getElementById("submitStockCountBtn")?.addEventListener("click", async 
       alert(`Line ${index + 1}: counted qty is required.`);
       return;
     }
+
+    if (Number.isNaN(Number(line.countedQty))) {
+      alert(`Line ${index + 1}: counted qty is invalid.`);
+      return;
+    }
+
     if (Number(line.countedQty) < 0) {
       alert(`Line ${index + 1}: counted qty cannot be negative.`);
       return;
@@ -135,6 +161,7 @@ document.getElementById("submitStockCountBtn")?.addEventListener("click", async 
       data = JSON.parse(text);
     } catch {
       setOutput(`Non-JSON response:\n${text}`);
+      alert("Invalid response received from server.");
       return;
     }
 
@@ -148,6 +175,7 @@ document.getElementById("submitStockCountBtn")?.addEventListener("click", async 
     window.location.href = `/stock-count-result.html?stockCountId=${encodeURIComponent(stockCountId)}`;
   } catch (err) {
     setOutput(`Error: ${err.message}`);
+    alert(err.message);
   } finally {
     hidePageLoader?.();
   }

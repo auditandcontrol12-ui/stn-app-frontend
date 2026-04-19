@@ -63,7 +63,7 @@ async function loadStockCountResult() {
     }
 
     const h = data.header || {};
-    const lines = data.lines || [];
+    const lines = Array.isArray(data.lines) ? data.lines : [];
 
     if (h.BusinessArea) {
       localStorage.setItem("selectedArea", h.BusinessArea);
@@ -81,22 +81,30 @@ async function loadStockCountResult() {
     setText("scrPreparedBy", h.CreatedBy || "");
 
     if (body) {
-      body.innerHTML = "";
-
-      lines.forEach((line, index) => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td class="col-line">${index + 1}</td>
-          <td>${escapeHtml(line.ItemCode || "")}</td>
-          <td>${escapeHtml(line.ItemName || "")}</td>
-          <td>${escapeHtml(line.UOM || "")}</td>
-          <td>${escapeHtml(line.BatchNumber || "")}</td>
-          <td>${formatQty(line.SystemQtyAtStart)}</td>
-          <td>${formatQty(line.CountedQty)}</td>
-          <td>${formatQty(line.VarianceQty)}</td>
+      if (!lines.length) {
+        body.innerHTML = `
+          <tr>
+            <td colspan="8" style="text-align:center;">No stock count result lines found.</td>
+          </tr>
         `;
-        body.appendChild(tr);
-      });
+      } else {
+        body.innerHTML = "";
+
+        lines.forEach((line, index) => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td class="col-line">${index + 1}</td>
+            <td>${escapeHtml(line.ItemCode || "")}</td>
+            <td>${escapeHtml(line.ItemName || "")}</td>
+            <td>${escapeHtml(line.UOM || "")}</td>
+            <td>${escapeHtml(line.BatchNumber || "")}</td>
+            <td>${formatQty(line.SystemQtyAtStart)}</td>
+            <td>${formatQty(line.CountedQty)}</td>
+            <td>${formatQty(line.VarianceQty)}</td>
+          `;
+          body.appendChild(tr);
+        });
+      }
     }
   } catch (err) {
     alert(`Error: ${err.message}`);

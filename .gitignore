@@ -5,3 +5,4 @@ api/node_modules/
 dist/
 build/
 .local/
+api/local.settings.json

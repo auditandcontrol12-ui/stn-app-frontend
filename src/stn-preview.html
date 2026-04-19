@@ -13,7 +13,7 @@
         <span class="hero-badge">Document Preview</span>
         <h1>STN Preview</h1>
         <div class="page-subtitle">
-          Review the STN, save draft, print draft, and submit later.
+          Review the STN, save as draft, keep the print layout unchanged, upload the signed PDF, and submit when ready.
         </div>
       </div>
     </div>
@@ -97,6 +97,23 @@
         </div>
       </div>
 
+      <div class="card accent-soft print-card no-print">
+        <div class="section-title">Signed Document</div>
+
+        <div class="upload-help-text">
+          Save as Draft first. Then print the STN, sign it, upload the signed PDF, and submit.
+        </div>
+
+        <div class="signed-upload-row">
+          <input id="signedPdfFile" type="file" accept="application/pdf,.pdf" />
+          <button id="uploadSignedPdfBtn" type="button" class="secondary">Upload Signed PDF</button>
+        </div>
+
+        <div id="signedPdfStatus" class="upload-status-text">
+          No signed PDF uploaded yet.
+        </div>
+      </div>
+
       <div id="draftPrintPages" class="print-only-block"></div>
 
       <div class="card soft no-print">
@@ -104,7 +121,7 @@
           <button id="backEntryBtn" class="secondary">Back to Entry</button>
           <button id="saveDraftBtn">Save as Draft</button>
           <button id="printDraftBtn" style="display:none;">Print Draft</button>
-          <button id="submitPreviewBtn" class="success" style="display:none;">Submit</button>
+          <button id="submitPreviewBtn" class="success" style="display:none;" disabled>Submit</button>
         </div>
       </div>
 

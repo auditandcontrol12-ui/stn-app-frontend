@@ -13,26 +13,31 @@
         <span class="hero-badge">STN Search</span>
         <h1>Check STN</h1>
         <div class="page-subtitle">
-          Search by STN sequence like 1001 or full STN number.
+          Search by STN sequence like 1001 or by full STN number, then review, download the attachment, print, edit, or delete where allowed.
         </div>
       </div>
     </div>
 
     <div class="card no-print">
       <div class="section-title">Search</div>
+      <div class="section-subtitle">Use the sequence number or the full STN number to locate the document.</div>
+
       <div class="form-grid search-grid">
         <div class="field-block">
           <label for="searchSeqNo">STN Sequence / STN Number</label>
           <input id="searchSeqNo" type="text" placeholder="Enter 1001 or full STN number" />
         </div>
       </div>
+
       <div class="action-row">
         <button id="searchBtn">Search</button>
         <button id="searchPrintBtn" class="success" style="display:none;">Print / Save PDF</button>
+        <button id="downloadAttachmentBtn" class="secondary" style="display:none;">Download Attachment</button>
         <button id="editSTNBtn" style="display:none;">Edit STN</button>
         <button id="deleteSTNBtn" class="danger" style="display:none;">Delete STN</button>
         <button id="backDashboardBtn" class="secondary">Back to Dashboard</button>
       </div>
+
       <div id="searchStatusBanner" class="status-banner status-unsaved" style="margin-top:14px;">
         Enter an STN number to search.
       </div>

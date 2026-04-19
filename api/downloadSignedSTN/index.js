@@ -1,4 +1,5 @@
 const { app } = require("@azure/functions");
+const { BlobServiceClient } = require("@azure/storage-blob");
 const { getPool, sql } = require("../shared/db");
 const { readCookie } = require("../shared/session");
 
@@ -48,10 +49,27 @@ async function getSessionUser(pool, sessionId) {
   };
 }
 
-app.http("getSTN", {
+function getContainerClient() {
+  const connectionString = process.env.AzureWebJobsStorage;
+  const containerName = process.env.STN_SIGNED_CONTAINER || "signed-stn";
+
+  const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
+  return blobServiceClient.getContainerClient(containerName);
+}
+
+function streamToBuffer(readable) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    readable.on("data", (chunk) => chunks.push(chunk));
+    readable.on("end", () => resolve(Buffer.concat(chunks)));
+    readable.on("error", reject);
+  });
+}
+
+app.http("downloadSignedSTN", {
   methods: ["GET"],
   authLevel: "anonymous",
-  handler: async (request) => {
+  handler: async (request, context) => {
     try {
       const stnId = Number(request.query.get("stnId"));
 
@@ -75,110 +93,78 @@ app.http("getSTN", {
       const pool = await getPool();
       const sessionUser = await getSessionUser(pool, sessionId);
 
-      if (!sessionUser || sessionUser.allowedAreas.length === 0) {
+      if (!sessionUser) {
         return {
-          status: 403,
-          jsonBody: { success: false, message: "Access denied." }
+          status: 401,
+          jsonBody: { success: false, message: "Unauthorized." }
         };
       }
 
-      const headerResult = await pool.request()
+      const result = await pool.request()
         .input("STNId", sql.BigInt, stnId)
         .query(`
           SELECT TOP 1
               STNId,
               STNNumber,
-              STNSeqNo,
-              STNType,
               BusinessArea,
-              STNDate,
-              WarehouseFrom,
-              WarehouseTo,
-              WarehouseFromCustom,
-              WarehouseToCustom,
-              Remarks,
               Status,
-              CreatedBy,
-              CreatedByEmail,
-              CreatedDateTime,
-              UpdatedBy,
-              UpdatedByEmail,
-              UpdatedDateTime,
-              SubmittedBy,
-              SubmittedByEmail,
-              SubmittedDateTime,
-              DeletedBy,
-              DeletedByEmail,
-              DeletedDateTime,
-              SignedDocumentFileName,
-              SignedDocumentBlobName,
-              SignedDocumentBlobUrl,
-              SignedDocumentUploadedByEmail,
-              SignedDocumentUploadedByName,
-              SignedDocumentUploadedDateTime,
+              IsDeleted,
               IsSignedDocumentUploaded,
-              IsDeleted
+              SignedDocumentFileName,
+              SignedDocumentBlobName
           FROM STNAPP.STNHeader
           WHERE STNId = @STNId;
         `);
 
-      if (headerResult.recordset.length === 0) {
+      if (result.recordset.length === 0) {
         return {
           status: 404,
           jsonBody: { success: false, message: "STN not found." }
         };
       }
 
-      const header = headerResult.recordset[0];
+      const row = result.recordset[0];
 
-      if (header.IsDeleted) {
+      if (row.IsDeleted) {
         return {
           status: 404,
           jsonBody: { success: false, message: "STN not found." }
         };
       }
 
-      if (!sessionUser.allowedAreas.includes(header.BusinessArea)) {
+      if (!sessionUser.allowedAreas.includes(row.BusinessArea)) {
         return {
           status: 403,
           jsonBody: { success: false, message: "Access denied." }
         };
       }
 
-      const lineResult = await pool.request()
-        .input("STNId", sql.BigInt, stnId)
-        .query(`
-          SELECT
-              STNLineId,
-              STNId,
-              LineNu,
-              ItemCode,
-              ItemName,
-              UOM,
-              BatchNumber,
-              Qty,
-              LineRemarks,
-              CreatedDateTime
-          FROM STNAPP.STNLine
-          WHERE STNId = @STNId
-          ORDER BY LineNu;
-        `);
+      if (!row.IsSignedDocumentUploaded || !row.SignedDocumentBlobName) {
+        return {
+          status: 404,
+          jsonBody: { success: false, message: "Signed attachment not found." }
+        };
+      }
+
+      const containerClient = getContainerClient();
+      const blobClient = containerClient.getBlobClient(row.SignedDocumentBlobName);
+      const downloadResponse = await blobClient.download();
+      const fileBuffer = await streamToBuffer(downloadResponse.readableStreamBody);
 
       return {
         status: 200,
-        jsonBody: {
-          success: true,
-          header,
-          lines: lineResult.recordset
-        }
+        headers: {
+          "Content-Type": "application/pdf",
+          "Content-Disposition": `attachment; filename="${row.SignedDocumentFileName || `${row.STNNumber}.pdf`}"`,
+          "Cache-Control": "no-store"
+        },
+        body: fileBuffer
       };
     } catch (error) {
+      context.log("downloadSignedSTN error", error);
       return {
         status: 500,
-        jsonBody: {
-          success: false,
-          message: error.message
-        }
+        jsonBody: { success: false, message: error.message || "Download failed." }
       };
     }
   }

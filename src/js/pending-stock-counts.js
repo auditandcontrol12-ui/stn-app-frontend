@@ -34,7 +34,7 @@ function renderRows(items) {
   if (!items.length) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="8">No pending stock counts found.</td>
+        <td colspan="8" style="text-align:center;">No pending stock counts found.</td>
       </tr>
     `;
     return;
@@ -49,7 +49,7 @@ function renderRows(items) {
       <td>${escapeHtml(item.AssignedBy || "")}</td>
       <td>${escapeHtml(formatDateTime(item.AssignedDateTime))}</td>
       <td>${escapeHtml(formatDateTime(item.StartedDateTime))}</td>
-      <td>
+      <td class="col-actions">
         <button
           class="success mini-btn open-btn"
           data-id="${item.StockCountId}"
@@ -130,6 +130,7 @@ async function loadPending() {
     renderRows(Array.isArray(data.items) ? data.items : []);
   } catch (err) {
     setOutput(`Error: ${err.message}`);
+    alert(err.message);
   } finally {
     hidePageLoader?.();
   }

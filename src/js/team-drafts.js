@@ -12,11 +12,20 @@ function formatDateTime(value) {
   }
 }
 
+function showLoading(message) {
+  showPageLoader?.(message || "Loading team drafts...");
+}
+
+function hideLoading() {
+  hidePageLoader?.();
+}
+
 async function deleteDraft(stnId, stnNumber) {
   const ok = window.confirm(`Delete draft ${stnNumber || stnId}?`);
   if (!ok) return;
 
   try {
+    showLoading("Deleting draft...");
     setOutput("Deleting draft...");
 
     const res = await fetch("/api/deleteSTN", {
@@ -46,9 +55,12 @@ async function deleteDraft(stnId, stnNumber) {
     }
 
     alert("Draft deleted successfully.");
-    loadTeamDrafts();
+    await loadTeamDrafts();
   } catch (err) {
     setOutput(`Error: ${err.message}`);
+    alert(err.message);
+  } finally {
+    hideLoading();
   }
 }
 
@@ -81,7 +93,7 @@ function renderTeamDrafts(rows) {
       <td>${formatDateTime(lastActivity)}</td>
       <td class="col-actions">
         <div class="action-row">
-          <button type="button" class="mini-btn open-btn">Open</button>
+          <button type="button" class="mini-btn open-btn success">Open</button>
           <button type="button" class="mini-btn danger delete-btn">Delete</button>
         </div>
       </td>
@@ -104,6 +116,7 @@ async function loadTeamDrafts() {
   const area = document.getElementById("teamDraftArea")?.value || "";
 
   try {
+    showLoading("Loading team drafts...");
     setOutput("Loading team drafts...");
 
     const res = await fetch(`/api/getTeamDrafts${area ? `?area=${encodeURIComponent(area)}` : ""}`, {
@@ -117,6 +130,7 @@ async function loadTeamDrafts() {
       data = JSON.parse(text);
     } catch {
       setOutput(`Non-JSON response:\n${text}`);
+      renderTeamDrafts([]);
       return;
     }
 
@@ -132,6 +146,9 @@ async function loadTeamDrafts() {
   } catch (err) {
     setOutput(`Error: ${err.message}`);
     renderTeamDrafts([]);
+    alert(err.message);
+  } finally {
+    hideLoading();
   }
 }
 

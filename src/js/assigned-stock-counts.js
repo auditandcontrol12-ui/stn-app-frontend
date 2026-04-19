@@ -88,7 +88,7 @@ function renderRows(items) {
   if (!items.length) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="9">No stock counts found.</td>
+        <td colspan="9" style="text-align:center;">No stock counts found.</td>
       </tr>
     `;
     return;
@@ -104,7 +104,7 @@ function renderRows(items) {
       <td>${escapeHtml(formatDateTime(item.AssignedDateTime))}</td>
       <td>${escapeHtml(formatDateTime(item.StartedDateTime))}</td>
       <td>${escapeHtml(formatDateTime(item.SubmittedDateTime))}</td>
-      <td>${buildActionButtons(item)}</td>
+      <td class="col-actions">${buildActionButtons(item)}</td>
     </tr>
   `).join("");
 
@@ -257,6 +257,7 @@ async function loadAssignedStockCounts(status = "") {
     renderRows(Array.isArray(data.items) ? data.items : []);
   } catch (err) {
     setOutput(`Error: ${err.message}`);
+    alert(err.message);
   } finally {
     hidePageLoader?.();
   }

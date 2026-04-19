@@ -13,14 +13,16 @@
         <span class="hero-badge">Manager Action</span>
         <h1>Assign Stock Count</h1>
         <div class="page-subtitle">
-          Create and assign a stock count to a supervisor.
+          Create and assign a stock count to a supervisor. The line section is the main working area.
         </div>
       </div>
     </div>
 
     <div class="page-shell">
       <div class="card">
-        <div class="section-title">Header</div>
+        <div class="section-title">Assignment Header</div>
+        <div class="section-subtitle">Set area, warehouse, assignee, and optional remarks before assignment.</div>
+
         <div class="form-grid">
           <div class="field-block">
             <label for="businessArea">Business Area</label>
@@ -49,8 +51,11 @@
       </div>
 
       <div class="card">
-        <div class="section-title">Lines</div>
-        <div class="action-row" style="margin-bottom:14px;">
+        <div class="line-toolbar">
+          <div>
+            <div class="section-title" style="margin-bottom:4px;">Count Lines</div>
+            <p>Add the items and batches that will be counted in this assignment.</p>
+          </div>
           <button id="addLineBtn">Add Line</button>
         </div>
 
@@ -63,7 +68,7 @@
                 <th>Item Name</th>
                 <th>UOM</th>
                 <th>Batch Number</th>
-                <th>Actions</th>
+                <th class="col-actions">Action</th>
               </tr>
             </thead>
             <tbody id="linesBody"></tbody>
@@ -85,12 +90,12 @@
   </div>
 
   <script src="/js/app.js"></script>
-  <!-- <div id="pageLoader" class="page-loader" aria-hidden="true">
+  <div id="pageLoader" class="page-loader" aria-hidden="true">
     <div class="page-loader-card">
       <div class="page-loader-spinner"></div>
       <div id="pageLoaderText" class="page-loader-text">Loading...</div>
     </div>
-  </div> -->
+  </div>
 
   <script src="/js/assign-stock-count.js"></script>
 </body>

@@ -13,14 +13,16 @@
         <span class="hero-badge">Draft Worklist</span>
         <h1>My Drafts</h1>
         <div class="page-subtitle">
-          View, reopen, print, and continue your draft STNs.
+          View, reopen, and continue your draft STNs. The draft list is the main work area.
         </div>
       </div>
     </div>
 
     <div class="page-shell">
-      <div class="card">
+      <div class="card compact-card">
         <div class="section-title">Filters</div>
+        <div class="section-subtitle">Use filters only to narrow the result. Open draft remains the main action.</div>
+
         <div class="form-grid search-grid">
           <div class="field-block">
             <label for="myDraftArea">Business Area</label>
@@ -31,6 +33,7 @@
             </select>
           </div>
         </div>
+
         <div class="action-row">
           <button id="refreshMyDraftsBtn">Refresh</button>
           <button id="backDashboardBtn" class="secondary">Back to Dashboard</button>
@@ -39,6 +42,8 @@
 
       <div class="card">
         <div class="section-title">Draft List</div>
+        <div class="section-subtitle">Review your drafts and reopen the required document.</div>
+
         <div class="lines-table-wrap">
           <table class="lines-table">
             <thead>
@@ -62,9 +67,9 @@
 
       <!-- <div class="card output-card">
         <pre id="myDraftsOutput">Loading drafts...</pre>
-      </div>
+      </div> -->
     </div>
-  </div> -->
+  </div>
 
   <script src="/js/my-drafts.js"></script>
 </body>

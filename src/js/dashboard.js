@@ -6,6 +6,8 @@ function setText(id, value) {
 let currentUser = null;
 let selectedArea = localStorage.getItem("selectedArea") || "";
 
+showPageLoader?.("Loading dashboard...");
+
 function clearStnDraftState() {
   localStorage.removeItem("stnDraftData");
   localStorage.removeItem("stnLastSubmitted");
@@ -45,8 +47,10 @@ function saveCurrentUser() {
 function makeAreaButton(label, isAllowed) {
   const btn = document.createElement("button");
   btn.textContent = label;
+  btn.classList.add("secondary");
 
   if (selectedArea === label) {
+    btn.classList.remove("secondary");
     btn.classList.add("success");
   }
 
@@ -128,6 +132,8 @@ async function loadUserAccess() {
   const output = document.getElementById("output");
 
   try {
+    showPageLoader?.("Loading dashboard...");
+
     if (output) output.textContent = "Loading user access...";
 
     const res = await fetch("/api/getUserAccess", {
@@ -141,12 +147,14 @@ async function loadUserAccess() {
       data = JSON.parse(text);
     } catch {
       if (output) output.textContent = `Non-JSON response:\n${text}`;
+      hidePageLoader?.();
       return;
     }
 
     if (output) output.textContent = JSON.stringify(data, null, 2);
 
     if (!data.success || !data.data) {
+      hidePageLoader?.();
       localStorage.removeItem("stnCurrentUser");
       localStorage.removeItem("selectedArea");
       window.location.href = "/no-access.html";
@@ -178,8 +186,10 @@ async function loadUserAccess() {
     renderBusinessAreaButtons();
     renderManagerActions();
     refreshSelectedArea();
+    hidePageLoader?.();
   } catch (err) {
     if (output) output.textContent = `Error: ${err.message}`;
+    hidePageLoader?.();
   }
 }
 
