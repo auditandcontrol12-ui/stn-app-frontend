@@ -5,11 +5,11 @@ let containerClient;
 function getContainerClient() {
   if (containerClient) return containerClient;
 
-  const connectionString = process.env.AzureWebJobsStorage;
+  const connectionString = process.env.BLOB_STORAGE_CONNECTION_STRING;
   const containerName = process.env.STN_SIGNED_CONTAINER || "signed-stn";
 
   if (!connectionString) {
-    throw new Error("AzureWebJobsStorage is not configured.");
+    throw new Error("STORAGE CONNECTION is not configured.");
   }
 
   const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);

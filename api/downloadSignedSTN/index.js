@@ -50,7 +50,7 @@ async function getSessionUser(pool, sessionId) {
 }
 
 function getContainerClient() {
-  const connectionString = process.env.AzureWebJobsStorage;
+  const connectionString = process.env.BLOB_STORAGE_CONNECTION_STRING;
   const containerName = process.env.STN_SIGNED_CONTAINER || "signed-stn";
 
   const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
