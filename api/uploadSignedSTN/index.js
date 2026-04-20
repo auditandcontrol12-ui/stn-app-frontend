@@ -1,3 +1,4 @@
+const path = require("path");
 const { app } = require("@azure/functions");
 const Busboy = require("busboy");
 const { getPool, sql } = require("../shared/db");
@@ -109,6 +110,49 @@ function sanitizeFilePart(value) {
     .replace(/^_+|_+$/g, "");
 }
 
+function getAllowedFileMeta(fileName, mimeType) {
+  const normalizedMime = String(mimeType || "").trim().toLowerCase();
+  const ext = String(path.extname(fileName || "") || "").toLowerCase();
+
+  const allowed = [
+    {
+      extensions: [".pdf"],
+      mimeTypes: ["application/pdf"],
+      contentType: "application/pdf",
+      fallbackExtension: ".pdf"
+    },
+    {
+      extensions: [".jpg", ".jpeg"],
+      mimeTypes: ["image/jpeg"],
+      contentType: "image/jpeg",
+      fallbackExtension: ".jpg"
+    },
+    {
+      extensions: [".png"],
+      mimeTypes: ["image/png"],
+      contentType: "image/png",
+      fallbackExtension: ".png"
+    },
+    {
+      extensions: [".webp"],
+      mimeTypes: ["image/webp"],
+      contentType: "image/webp",
+      fallbackExtension: ".webp"
+    }
+  ];
+
+  for (const item of allowed) {
+    if (item.mimeTypes.includes(normalizedMime) || item.extensions.includes(ext)) {
+      return {
+        extension: item.extensions.includes(ext) ? ext : item.fallbackExtension,
+        contentType: item.contentType
+      };
+    }
+  }
+
+  return null;
+}
+
 app.http("uploadSignedSTN", {
   methods: ["POST"],
   authLevel: "anonymous",
@@ -149,18 +193,21 @@ app.http("uploadSignedSTN", {
       if (!uploadedFile) {
         return {
           status: 400,
-          jsonBody: { success: false, message: "PDF file is required." }
+          jsonBody: { success: false, message: "Signed document is required." }
         };
       }
 
       const fileName = String(uploadedFile.filename || "").trim();
       const mimeType = String(uploadedFile.mimeType || "").trim().toLowerCase();
-      const isPdf = mimeType === "application/pdf" || fileName.toLowerCase().endsWith(".pdf");
+      const fileMeta = getAllowedFileMeta(fileName, mimeType);
 
-      if (!isPdf) {
+      if (!fileMeta) {
         return {
           status: 400,
-          jsonBody: { success: false, message: "Only PDF files are allowed." }
+          jsonBody: {
+            success: false,
+            message: "Only PDF, JPG, JPEG, PNG, or WEBP files are allowed."
+          }
         };
       }
 
@@ -213,7 +260,7 @@ app.http("uploadSignedSTN", {
       if (stn.Status !== "Draft") {
         return {
           status: 400,
-          jsonBody: { success: false, message: "Signed PDF can be uploaded only for Draft STN." }
+          jsonBody: { success: false, message: "Signed document can be uploaded only for Draft STN." }
         };
       }
 
@@ -222,19 +269,19 @@ app.http("uploadSignedSTN", {
           status: 403,
           jsonBody: {
             success: false,
-            message: "Signed PDF already uploaded. Only manager can replace it."
+            message: "Signed document already uploaded. Only manager can replace it."
           }
         };
       }
 
       const safeStnNumber = sanitizeFilePart(stn.STNNumber);
-      const finalFileName = `${safeStnNumber}.pdf`;
+      const finalFileName = `${safeStnNumber}${fileMeta.extension}`;
       const blobName = `stn/${finalFileName}`;
 
       const uploadResult = await uploadBuffer(
         blobName,
         uploadedFile.buffer,
-        "application/pdf"
+        fileMeta.contentType
       );
 
       await pool.request()
@@ -262,8 +309,8 @@ app.http("uploadSignedSTN", {
         jsonBody: {
           success: true,
           message: stn.IsSignedDocumentUploaded
-            ? "Signed PDF replaced successfully."
-            : "Signed PDF uploaded successfully.",
+            ? "Signed document replaced successfully."
+            : "Signed document uploaded successfully.",
           stnId: stn.STNId,
           fileName: finalFileName,
           blobName: uploadResult.blobName,
@@ -278,7 +325,7 @@ app.http("uploadSignedSTN", {
         status: 500,
         jsonBody: {
           success: false,
-          message: error.message || "Failed to upload signed PDF."
+          message: error.message || "Failed to upload signed document."
         }
       };
     }

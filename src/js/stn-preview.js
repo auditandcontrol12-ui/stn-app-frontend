@@ -57,6 +57,53 @@ function isManagerUser() {
   return !!currentUser?.IsManager;
 }
 
+function getSelectedSignedDocument() {
+  return window.selectedSignedDocumentFile || null;
+}
+
+function setSelectedSignedDocument(file) {
+  window.selectedSignedDocumentFile = file || null;
+
+  const nameEl = document.getElementById("selectedSignedDocumentName");
+  if (!nameEl) return;
+
+  if (!file) {
+    nameEl.className = "upload-status-text";
+    nameEl.textContent = "No file selected.";
+    return;
+  }
+
+  nameEl.className = "upload-status-text";
+  nameEl.textContent = `Selected file: ${file.name}`;
+}
+
+function clearSelectedSignedDocument() {
+  const fileInput = document.getElementById("signedDocumentFile");
+  if (fileInput) fileInput.value = "";
+  setSelectedSignedDocument(null);
+}
+
+function isAllowedSignedDocument(file) {
+  if (!file) return false;
+
+  const fileName = String(file.name || "").toLowerCase();
+  const mimeType = String(file.type || "").toLowerCase();
+
+  const allowedMimeTypes = [
+    "application/pdf",
+    "image/jpeg",
+    "image/png",
+    "image/webp"
+  ];
+
+  const allowedExtensions = [".pdf", ".jpg", ".jpeg", ".png", ".webp"];
+
+  return (
+    allowedMimeTypes.includes(mimeType) ||
+    allowedExtensions.some((ext) => fileName.endsWith(ext))
+  );
+}
+
 function togglePreviewActions(draft) {
   const printBtn = document.getElementById("printDraftBtn");
   const submitBtn = document.getElementById("submitPreviewBtn");
@@ -66,7 +113,7 @@ function togglePreviewActions(draft) {
   if (printBtn) printBtn.style.display = hasRealDraft ? "inline-block" : "none";
   if (submitBtn) submitBtn.style.display = hasRealDraft ? "inline-block" : "none";
 
-  refreshSignedPdfUI(draft);
+  refreshSignedDocumentUI(draft);
 }
 
 function setPreviewStatus(status, hasRealDraft) {
@@ -78,7 +125,7 @@ function setPreviewStatus(status, hasRealDraft) {
   if (status === "Draft" && hasRealDraft) {
     statusText.textContent = "Draft";
     banner.className = "status-banner status-draft";
-    banner.textContent = "Draft saved successfully. STN number created. You can now print draft, upload signed PDF, and submit later.";
+    banner.textContent = "Draft saved successfully. STN number created. You can now print draft, upload signed document, and submit later.";
     return;
   }
 
@@ -280,20 +327,20 @@ function renderDraftPrintPages(draft) {
   `).join("");
 }
 
-function refreshSignedPdfUI(draft) {
-  const fileInput = document.getElementById("signedPdfFile");
-  const uploadBtn = document.getElementById("uploadSignedPdfBtn");
+function refreshSignedDocumentUI(draft) {
+  const pickBtn = document.getElementById("pickSignedDocumentBtn");
+  const uploadBtn = document.getElementById("uploadSignedDocumentBtn");
   const submitBtn = document.getElementById("submitPreviewBtn");
   const statusEl = document.getElementById("signedPdfStatus");
 
-  if (!fileInput || !uploadBtn || !submitBtn || !statusEl) return;
+  if (!pickBtn || !uploadBtn || !submitBtn || !statusEl) return;
 
   const hasRealDraft = !!draft?.stnId && draft?.status === "Draft";
   const isSubmitted = draft?.status === "Submitted";
-  const hasSignedPdf = !!draft?.isSignedDocumentUploaded;
+  const hasSignedDocument = !!draft?.isSignedDocumentUploaded;
 
   if (!hasRealDraft) {
-    fileInput.disabled = true;
+    pickBtn.disabled = true;
     uploadBtn.disabled = true;
     submitBtn.disabled = true;
     statusEl.className = "upload-status-text";
@@ -302,32 +349,32 @@ function refreshSignedPdfUI(draft) {
   }
 
   if (isSubmitted) {
-    fileInput.disabled = true;
+    pickBtn.disabled = true;
     uploadBtn.disabled = true;
     submitBtn.disabled = true;
     statusEl.className = "upload-status-text success";
     statusEl.textContent = draft?.signedDocumentFileName
-      ? `Signed PDF uploaded: ${draft.signedDocumentFileName}`
+      ? `Signed document uploaded: ${draft.signedDocumentFileName}`
       : "STN already submitted.";
     return;
   }
 
-  if (hasSignedPdf) {
-    fileInput.disabled = false;
+  if (hasSignedDocument) {
+    pickBtn.disabled = false;
     uploadBtn.disabled = false;
     submitBtn.disabled = false;
     statusEl.className = "upload-status-text success";
     statusEl.textContent = draft?.signedDocumentFileName
-      ? `Signed PDF uploaded: ${draft.signedDocumentFileName}${isManagerUser() ? " (Manager can replace while Draft)" : ""}`
-      : "Signed PDF uploaded successfully.";
+      ? `Signed document uploaded: ${draft.signedDocumentFileName}${isManagerUser() ? " (Manager can replace while Draft)" : ""}`
+      : "Signed document uploaded successfully.";
     return;
   }
 
-  fileInput.disabled = false;
+  pickBtn.disabled = false;
   uploadBtn.disabled = false;
   submitBtn.disabled = true;
   statusEl.className = "upload-status-text warning";
-  statusEl.textContent = "No signed PDF uploaded yet. Submit is blocked until upload is completed.";
+  statusEl.textContent = "No signed document uploaded yet. Submit is blocked until upload is completed.";
 }
 
 function renderPreview() {
@@ -449,26 +496,24 @@ async function postDraftWithStatus(status) {
   return { api: data, draft: updatedDraft };
 }
 
-async function uploadSignedPdf() {
+async function uploadSignedDocument() {
   const draft = loadDraft();
-  const fileInput = document.getElementById("signedPdfFile");
-  const uploadBtn = document.getElementById("uploadSignedPdfBtn");
+  const uploadBtn = document.getElementById("uploadSignedDocumentBtn");
   const statusEl = document.getElementById("signedPdfStatus");
+  const file = getSelectedSignedDocument();
 
   if (!draft?.stnId || draft?.status !== "Draft") {
     alert("Save as Draft first.");
     return;
   }
 
-  const file = fileInput?.files?.[0];
   if (!file) {
-    alert("Select a PDF file first.");
+    alert("Select a file first.");
     return;
   }
 
-  const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
-  if (!isPdf) {
-    alert("Only PDF file is allowed.");
+  if (!isAllowedSignedDocument(file)) {
+    alert("Only PDF, JPG, JPEG, PNG, or WEBP files are allowed.");
     return;
   }
 
@@ -479,10 +524,10 @@ async function uploadSignedPdf() {
   uploadBtn.disabled = true;
   if (statusEl) {
     statusEl.className = "upload-status-text";
-    statusEl.textContent = "Uploading signed PDF...";
+    statusEl.textContent = "Uploading signed document...";
   }
 
-  showPageLoader?.("Uploading signed PDF...");
+  showPageLoader?.("Uploading signed document...");
 
   try {
     const res = await fetch("/api/uploadSignedSTN", {
@@ -513,21 +558,41 @@ async function uploadSignedPdf() {
     };
 
     saveDraftLocal(updatedDraft);
-    if (fileInput) fileInput.value = "";
+    clearSelectedSignedDocument();
 
     renderPreview();
-    alert(data.message || "Signed PDF uploaded successfully.");
+    alert(data.message || "Signed document uploaded successfully.");
   } catch (error) {
     if (statusEl) {
       statusEl.className = "upload-status-text error";
-      statusEl.textContent = error.message || "Failed to upload signed PDF.";
+      statusEl.textContent = error.message || "Failed to upload signed document.";
     }
-    alert(error.message || "Failed to upload signed PDF.");
+    alert(error.message || "Failed to upload signed document.");
   } finally {
     uploadBtn.disabled = false;
     hidePageLoader?.();
   }
 }
+
+document.getElementById("pickSignedDocumentBtn")?.addEventListener("click", () => {
+  document.getElementById("signedDocumentFile")?.click();
+});
+
+document.getElementById("signedDocumentFile")?.addEventListener("change", (event) => {
+  const file = event.target?.files?.[0] || null;
+  if (!file) {
+    setSelectedSignedDocument(null);
+    return;
+  }
+
+  if (!isAllowedSignedDocument(file)) {
+    alert("Only PDF, JPG, JPEG, PNG, or WEBP files are allowed.");
+    clearSelectedSignedDocument();
+    return;
+  }
+
+  setSelectedSignedDocument(file);
+});
 
 document.getElementById("backEntryBtn")?.addEventListener("click", () => {
   const draft = loadDraft();
@@ -547,8 +612,8 @@ document.getElementById("saveDraftBtn")?.addEventListener("click", async () => {
   alert(`Draft saved successfully. STN No: ${result.api.stnSeqNo}`);
 });
 
-document.getElementById("uploadSignedPdfBtn")?.addEventListener("click", async () => {
-  await uploadSignedPdf();
+document.getElementById("uploadSignedDocumentBtn")?.addEventListener("click", async () => {
+  await uploadSignedDocument();
 });
 
 document.getElementById("printDraftBtn")?.addEventListener("click", () => {
@@ -570,7 +635,7 @@ document.getElementById("submitPreviewBtn")?.addEventListener("click", async () 
   }
 
   if (!draft?.isSignedDocumentUploaded) {
-    alert("Signed PDF must be uploaded before submit.");
+    alert("Signed document must be uploaded before submit.");
     return;
   }
 
@@ -588,6 +653,7 @@ document.getElementById("submitPreviewBtn")?.addEventListener("click", async () 
 
 async function initPreviewPage() {
   await loadCurrentUser();
+  clearSelectedSignedDocument();
   renderPreview();
 }
 

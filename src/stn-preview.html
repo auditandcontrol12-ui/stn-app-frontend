@@ -13,7 +13,7 @@
         <span class="hero-badge">Document Preview</span>
         <h1>STN Preview</h1>
         <div class="page-subtitle">
-          Review the STN, save as draft, keep the print layout unchanged, upload the signed PDF, and submit when ready.
+          Review the STN, save as draft, keep the print layout unchanged, upload the signed document, and submit when ready.
         </div>
       </div>
     </div>
@@ -101,16 +101,26 @@
         <div class="section-title">Signed Document</div>
 
         <div class="upload-help-text">
-          Save as Draft first. Then print the STN, sign it, upload the signed PDF, and submit.
+          Save as Draft first. Then print the STN, sign it, and upload the signed document. On mobile, your device may offer camera, gallery, or files.
         </div>
 
         <div class="signed-upload-row">
-          <input id="signedPdfFile" type="file" accept="application/pdf,.pdf" />
-          <button id="uploadSignedPdfBtn" type="button" class="secondary">Upload Signed PDF</button>
+          <input
+            id="signedDocumentFile"
+            type="file"
+            accept=".pdf,image/*,application/pdf"
+            style="display:none;"
+          />
+          <button id="pickSignedDocumentBtn" type="button" class="secondary">Select File</button>
+          <button id="uploadSignedDocumentBtn" type="button" class="secondary">Upload File</button>
+        </div>
+
+        <div id="selectedSignedDocumentName" class="upload-status-text">
+          No file selected.
         </div>
 
         <div id="signedPdfStatus" class="upload-status-text">
-          No signed PDF uploaded yet.
+          No signed document uploaded yet.
         </div>
       </div>
 
