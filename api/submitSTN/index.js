@@ -21,6 +21,7 @@ async function getSessionUser(pool, sessionId) {
           u.UserName,
           u.IsAllowedManufacturing,
           u.IsAllowedDistribution,
+          u.IsSuperUser,
           u.IsActive,
           u.IsDeleted
       FROM STNAPP.UserSession s
@@ -50,7 +51,102 @@ async function getSessionUser(pool, sessionId) {
     userId: row.UserID,
     userEmail: row.UserEmail,
     userName: row.UserName,
+    isSuperUser: !!row.IsSuperUser,
     allowedAreas
+  };
+}
+
+async function validateWarehousePermission(pool, sessionUser, businessArea, stnType, warehouseCode) {
+  if (!warehouseCode || warehouseCode === "__OTHER__") {
+    return { ok: true };
+  }
+
+  if (!["IN", "OB"].includes(stnType)) {
+    return { ok: false, message: "Invalid STN Type." };
+  }
+
+  const permissionColumn = stnType === "IN" ? "AllowInboundTo" : "AllowOutboundFrom";
+
+  const warehouseResult = await pool.request()
+    .input("BusinessArea", sql.NVarChar(100), businessArea)
+    .input("WarehouseCode", sql.NVarChar(100), warehouseCode)
+    .query(`
+      SELECT TOP 1
+          WarehouseId,
+          WarehouseCode,
+          WarehouseName,
+          IsActive
+      FROM STNAPP.Warehouse
+      WHERE
+          BusinessArea = @BusinessArea
+          AND WarehouseCode = @WarehouseCode;
+    `);
+
+  if (warehouseResult.recordset.length === 0) {
+    return {
+      ok: false,
+      message: `Warehouse ${warehouseCode} is not valid for ${businessArea}.`
+    };
+  }
+
+  const warehouse = warehouseResult.recordset[0];
+  if (!warehouse.IsActive) {
+    return {
+      ok: false,
+      message: `Warehouse ${warehouseCode} is inactive.`
+    };
+  }
+
+  if (sessionUser.isSuperUser) {
+    return { ok: true };
+  }
+
+  const accessResult = await pool.request()
+    .input("UserId", sql.BigInt, sessionUser.userId)
+    .input("BusinessArea", sql.NVarChar(100), businessArea)
+    .input("WarehouseCode", sql.NVarChar(100), warehouseCode)
+    .query(`
+      SELECT TOP 1
+          UserWarehouseAccessId
+      FROM STNAPP.UserWarehouseAccess
+      WHERE
+          UserId = @UserId
+          AND BusinessArea = @BusinessArea
+          AND WarehouseCode = @WarehouseCode
+          AND IsActive = 1
+          AND ${permissionColumn} = 1;
+    `);
+
+  if (accessResult.recordset.length > 0) {
+    return { ok: true };
+  }
+
+  const anyAccessRowsResult = await pool.request()
+    .input("UserId", sql.BigInt, sessionUser.userId)
+    .input("BusinessArea", sql.NVarChar(100), businessArea)
+    .query(`
+      SELECT COUNT(1) AS Cnt
+      FROM STNAPP.UserWarehouseAccess
+      WHERE
+          UserId = @UserId
+          AND BusinessArea = @BusinessArea
+          AND IsActive = 1;
+    `);
+
+  const hasAnyAreaAccessRows = Number(anyAccessRowsResult.recordset[0]?.Cnt || 0) > 0;
+
+  // Safe transition fallback:
+  // if no explicit access rows exist yet for this user/area, allow current behavior.
+  if (!hasAnyAreaAccessRows) {
+    return { ok: true };
+  }
+
+  return {
+    ok: false,
+    message:
+      stnType === "IN"
+        ? `You do not have inbound access to warehouse ${warehouseCode}.`
+        : `You do not have outbound access from warehouse ${warehouseCode}.`
   };
 }
 
@@ -151,6 +247,33 @@ app.http("submitSTN", {
         };
       }
 
+      const normalizedType = String(stnType || "").trim().toUpperCase();
+
+      if (!["IN", "OB"].includes(normalizedType)) {
+        return {
+          status: 400,
+          jsonBody: { success: false, message: "STN Type must be IN or OB." }
+        };
+      }
+
+      const restrictedWarehouse =
+        normalizedType === "IN" ? warehouseTo : warehouseFrom;
+
+      const permissionCheck = await validateWarehousePermission(
+        pool,
+        sessionUser,
+        businessArea,
+        normalizedType,
+        restrictedWarehouse
+      );
+
+      if (!permissionCheck.ok) {
+        return {
+          status: 403,
+          jsonBody: { success: false, message: permissionCheck.message }
+        };
+      }
+
       transaction = new sql.Transaction(pool);
       await transaction.begin();
 
@@ -167,6 +290,9 @@ app.http("submitSTN", {
                 STNNumber,
                 STNSeqNo,
                 BusinessArea,
+                STNType,
+                WarehouseFrom,
+                WarehouseTo,
                 Status,
                 IsDeleted,
                 IsSignedDocumentUploaded,
@@ -223,7 +349,7 @@ app.http("submitSTN", {
 
         await new sql.Request(transaction)
           .input("STNId", sql.BigInt, Number(stnId))
-          .input("STNType", sql.NVarChar(40), stnType)
+          .input("STNType", sql.NVarChar(40), normalizedType)
           .input("BusinessArea", sql.NVarChar(200), businessArea)
           .input("STNDate", sql.Date, stnDate)
           .input("WarehouseFrom", sql.NVarChar(400), warehouseFrom)
@@ -292,12 +418,12 @@ app.http("submitSTN", {
         }
 
         finalStnSeqNo = seqResult.recordset[0].NewSeqNo;
-        finalStnNumber = buildSTNNumber(stnType, warehouseFrom, warehouseTo, finalStnSeqNo);
+        finalStnNumber = buildSTNNumber(normalizedType, warehouseFrom, warehouseTo, finalStnSeqNo);
 
         const headerResult = await new sql.Request(transaction)
           .input("STNNumber", sql.NVarChar(400), finalStnNumber)
           .input("STNSeqNo", sql.Int, finalStnSeqNo)
-          .input("STNType", sql.NVarChar(40), stnType)
+          .input("STNType", sql.NVarChar(40), normalizedType)
           .input("BusinessArea", sql.NVarChar(200), businessArea)
           .input("STNDate", sql.Date, stnDate)
           .input("WarehouseFrom", sql.NVarChar(400), warehouseFrom)

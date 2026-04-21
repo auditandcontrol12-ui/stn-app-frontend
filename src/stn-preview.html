@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>STN Preview</title>
   <link rel="stylesheet" href="/css/app.css" />
 </head>
+
 <body class="stn-print-mode">
   <div class="container print-shell">
     <div class="top-hero no-print">
@@ -13,7 +15,8 @@
         <span class="hero-badge">Document Preview</span>
         <h1>STN Preview</h1>
         <div class="page-subtitle">
-          Review the STN, save as draft, keep the print layout unchanged, upload the signed document, and submit when ready.
+          Review the STN, save as draft, keep the print layout unchanged, upload the signed document, and submit when
+          ready.
         </div>
       </div>
     </div>
@@ -101,18 +104,15 @@
         <div class="section-title">Signed Document</div>
 
         <div class="upload-help-text">
-          Save as Draft first. Then print the STN, sign it, and upload the signed document. On mobile, your device may offer camera, gallery, or files.
+          Save as Draft first. Then print the STN, sign it, and upload the signed document. On mobile, your device may
+          offer camera, gallery, or files.
         </div>
 
-        <div class="signed-upload-row">
-          <input
-            id="signedDocumentFile"
-            type="file"
-            accept=".pdf,image/*,application/pdf"
-            style="display:none;"
-          />
+        <div class="signed-upload-row signed-upload-flow">
+          <input id="signedDocumentFile" type="file" accept=".pdf,image/*,application/pdf" style="display:none;" />
           <button id="pickSignedDocumentBtn" type="button" class="secondary">Select File</button>
-          <button id="uploadSignedDocumentBtn" type="button" class="secondary">Upload File</button>
+          <span class="upload-flow-separator">then</span>
+          <button id="uploadSignedDocumentBtn" type="button" class="success">Upload File</button>
         </div>
 
         <div id="selectedSignedDocumentName" class="upload-status-text">
@@ -141,15 +141,16 @@
     </div>
   </div> -->
 
-<script src="/js/app.js"></script>
+      <script src="/js/app.js"></script>
 
-<!-- <div id="pageLoader" class="page-loader" aria-hidden="true">
+      <!-- <div id="pageLoader" class="page-loader" aria-hidden="true">
   <div class="page-loader-card">
     <div class="page-loader-spinner"></div>
     <div id="pageLoaderText" class="page-loader-text">Loading...</div>
   </div>
 </div> -->
 
-  <script src="/js/stn-preview.js"></script>
+      <script src="/js/stn-preview.js"></script>
 </body>
+
 </html>

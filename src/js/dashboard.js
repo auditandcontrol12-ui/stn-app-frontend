@@ -104,6 +104,14 @@ function renderManagerActions() {
   }
 }
 
+function renderSuperUserActions() {
+  const superUserBlock = document.getElementById("superUserBlock");
+  if (!superUserBlock) return;
+
+  superUserBlock.style.display = currentUser?.IsSuperUser ? "block" : "none";
+  setText("systemLevel", currentUser?.IsSuperUser ? "Super User" : "Standard User");
+}
+
 function canUseSelectedArea() {
   if (!currentUser) {
     alert("User is not loaded.");
@@ -185,6 +193,7 @@ async function loadUserAccess() {
 
     renderBusinessAreaButtons();
     renderManagerActions();
+    renderSuperUserActions();
     refreshSelectedArea();
     hidePageLoader?.();
   } catch (err) {
@@ -233,6 +242,22 @@ document.getElementById("myPendingStockCountsBtn")?.addEventListener("click", ()
 
 document.getElementById("assignedStockCountsBtn")?.addEventListener("click", () => {
   window.location.href = "/assigned-stock-counts.html";
+});
+
+document.getElementById("addUserBtn")?.addEventListener("click", () => {
+  window.location.href = "/add-user.html";
+});
+
+document.getElementById("manageUserBtn")?.addEventListener("click", () => {
+  window.location.href = "/manage-user.html";
+});
+
+document.getElementById("addWarehouseBtn")?.addEventListener("click", () => {
+  window.location.href = "/add-warehouse.html";
+});
+
+document.getElementById("manageWarehouseBtn")?.addEventListener("click", () => {
+  window.location.href = "/manage-warehouse.html";
 });
 
 document.getElementById("logoutBtn")?.addEventListener("click", async () => {

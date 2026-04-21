@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Add User</title>
+  <link rel="stylesheet" href="/css/app.css" />
+</head>
+<body>
+  <div class="container">
+    <div class="top-hero">
+      <div>
+        <span class="hero-badge">System Access</span>
+        <h1>Add User</h1>
+        <div class="page-subtitle">
+          Create a new user and assign initial business area and system access.
+        </div>
+      </div>
+    </div>
+
+    <div class="page-shell">
+      <div class="card">
+        <div class="section-title">New User Details</div>
+
+        <div class="form-grid">
+          <div class="field-block">
+            <label for="userEmail">User Email</label>
+            <input id="userEmail" type="email" />
+          </div>
+
+          <div class="field-block">
+            <label for="userName">User Name</label>
+            <input id="userName" type="text" />
+          </div>
+
+          <div class="field-block">
+            <label for="holdingName">Holding Name</label>
+            <input id="holdingName" type="text" value="Maggadit Holding" />
+          </div>
+
+          <div class="field-block">
+            <label for="userRole">User Role</label>
+            <input id="userRole" type="text" value="Supervisor" />
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">Access Setup</div>
+
+        <div class="form-grid">
+          <div class="field-block">
+            <label>
+              <input id="isAllowedManufacturing" type="checkbox" />
+              Manufacturing Access
+            </label>
+          </div>
+
+          <div class="field-block">
+            <label>
+              <input id="isAllowedDistribution" type="checkbox" />
+              Distribution Access
+            </label>
+          </div>
+
+          <div class="field-block">
+            <label>
+              <input id="isManager" type="checkbox" />
+              Is Manager
+            </label>
+          </div>
+
+          <div class="field-block">
+            <label>
+              <input id="isSuperUser" type="checkbox" />
+              Is Super User
+            </label>
+          </div>
+
+          <div class="field-block">
+            <label>
+              <input id="isActive" type="checkbox" checked />
+              Is Active
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="card soft">
+        <div class="action-row">
+          <button id="createUserBtn" class="success">Create User</button>
+          <button id="backDashboardBtn" class="secondary">Back to Dashboard</button>
+        </div>
+      </div>
+
+      <div id="pageLoader" class="page-loader" aria-hidden="true">
+        <div class="page-loader-card">
+          <div class="page-loader-spinner"></div>
+          <div id="pageLoaderText" class="page-loader-text">Working...</div>
+        </div>
+      </div>
+
+      <!-- <div class="card output-card">
+        <pre id="output">Waiting...</pre>
+      </div> -->
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script src="/js/add-user.js"></script>
+</body>
+</html>

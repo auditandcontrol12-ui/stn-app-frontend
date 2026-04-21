@@ -16,6 +16,7 @@ async function getSessionUser(pool, sessionId) {
           u.IsAllowedManufacturing,
           u.IsAllowedDistribution,
           u.IsManager,
+          u.IsSuperUser,
           u.IsActive,
           u.IsDeleted
       FROM STNAPP.UserSession s
@@ -40,6 +41,106 @@ async function getSessionUser(pool, sessionId) {
   return row;
 }
 
+async function getAllAreaWarehouses(pool, businessArea) {
+  const result = await pool.request()
+    .input("BusinessArea", sql.NVarChar(100), businessArea)
+    .query(`
+      SELECT
+          WarehouseCode AS WhsCode,
+          WarehouseName AS WhsName
+      FROM STNAPP.Warehouse
+      WHERE
+          BusinessArea = @BusinessArea
+          AND IsActive = 1
+      ORDER BY WarehouseCode;
+    `);
+
+  return result.recordset;
+}
+
+async function getRestrictedWarehouses(pool, userId, businessArea, permissionColumn) {
+  const accessResult = await pool.request()
+    .input("UserId", sql.BigInt, userId)
+    .input("BusinessArea", sql.NVarChar(100), businessArea)
+    .query(`
+      SELECT
+          W.WarehouseCode AS WhsCode,
+          W.WarehouseName AS WhsName
+      FROM STNAPP.UserWarehouseAccess UWA
+      INNER JOIN STNAPP.Warehouse W
+          ON W.BusinessArea = UWA.BusinessArea
+         AND W.WarehouseCode = UWA.WarehouseCode
+      WHERE
+          UWA.UserId = @UserId
+          AND UWA.BusinessArea = @BusinessArea
+          AND UWA.IsActive = 1
+          AND W.IsActive = 1
+          AND UWA.${permissionColumn} = 1
+      ORDER BY W.WarehouseCode;
+    `);
+
+  if (accessResult.recordset.length > 0) {
+    return accessResult.recordset;
+  }
+
+  const anyAccessRowsResult = await pool.request()
+    .input("UserId", sql.BigInt, userId)
+    .input("BusinessArea", sql.NVarChar(100), businessArea)
+    .query(`
+      SELECT COUNT(1) AS Cnt
+      FROM STNAPP.UserWarehouseAccess
+      WHERE
+          UserId = @UserId
+          AND BusinessArea = @BusinessArea
+          AND IsActive = 1;
+    `);
+
+  const hasAnyAreaAccessRows = Number(anyAccessRowsResult.recordset[0]?.Cnt || 0) > 0;
+
+  if (!hasAnyAreaAccessRows) {
+    return getAllAreaWarehouses(pool, businessArea);
+  }
+
+  return [];
+}
+
+async function getWarehouseLists(pool, userId, businessArea, stnType) {
+  const allWarehouses = await getAllAreaWarehouses(pool, businessArea);
+
+  if (stnType === "IN") {
+    const toWarehouses = await getRestrictedWarehouses(
+      pool,
+      userId,
+      businessArea,
+      "AllowInboundTo"
+    );
+
+    return {
+      fromWarehouses: allWarehouses,
+      toWarehouses
+    };
+  }
+
+  if (stnType === "OB") {
+    const fromWarehouses = await getRestrictedWarehouses(
+      pool,
+      userId,
+      businessArea,
+      "AllowOutboundFrom"
+    );
+
+    return {
+      fromWarehouses,
+      toWarehouses: allWarehouses
+    };
+  }
+
+  return {
+    fromWarehouses: allWarehouses,
+    toWarehouses: allWarehouses
+  };
+}
+
 app.http("getLookups", {
   methods: ["GET"],
   authLevel: "anonymous",
@@ -48,6 +149,7 @@ app.http("getLookups", {
       const url = new URL(request.url);
       const area = (url.searchParams.get("area") || "").trim();
       const mode = (url.searchParams.get("mode") || "").trim();
+      const stnType = (url.searchParams.get("stnType") || "").trim().toUpperCase();
 
       const cookieName = process.env.SESSION_COOKIE_NAME || "stn_session";
       const sessionId = readCookie(request, cookieName);
@@ -76,12 +178,12 @@ app.http("getLookups", {
       }
 
       if (mode === "assignableUsers") {
-        if (!sessionUser.IsManager) {
+        if (!sessionUser.IsManager && !sessionUser.IsSuperUser) {
           return {
             status: 403,
             jsonBody: {
               success: false,
-              message: "Only managers can view assignable users."
+              message: "Only managers or super users can view assignable users."
             }
           };
         }
@@ -90,6 +192,7 @@ app.http("getLookups", {
           .input("CurrentUserEmail", sql.NVarChar(1020), sessionUser.UserEmail || "")
           .query(`
             SELECT
+                UserID,
                 UserEmail,
                 UserName,
                 HoldingName,
@@ -97,12 +200,12 @@ app.http("getLookups", {
                 IsAllowedManufacturing,
                 IsAllowedDistribution,
                 IsActive,
-                IsManager
+                IsManager,
+                IsSuperUser
             FROM STNAPP.Users
             WHERE
                 IsActive = 1
                 AND ISNULL(IsDeleted, 0) = 0
-                AND ISNULL(IsManager, 0) = 0
                 AND LOWER(UserEmail) <> LOWER(@CurrentUserEmail)
             ORDER BY UserName, UserEmail;
           `);
@@ -140,65 +243,37 @@ app.http("getLookups", {
         };
       }
 
-      let itemQuery = "";
-      let whsQuery = "";
-
-      if (area === "Distribution") {
-        itemQuery = `
+      const itemResult = await pool.request()
+        .input("BusinessArea", sql.NVarChar(100), area)
+        .query(`
           SELECT
               ItemCode,
               ItemName,
               UOM
-          FROM stnapp.FactItemAttributeDist
-          WHERE IsActive = 1
+          FROM STNAPP.ItemMaster
+          WHERE
+              BusinessArea = @BusinessArea
+              AND IsActive = 1
           ORDER BY ItemCode;
-        `;
+        `);
 
-        whsQuery = `
-          SELECT
-              WhsCode,
-              WhsName,
-              Branch,
-              Location,
-              WhsType
-          FROM stnapp.FactWhsAttributeDist
-          WHERE IsActive = 1
-          ORDER BY WhsCode;
-        `;
-      } else {
-        itemQuery = `
-          SELECT
-              ItemCode,
-              ItemName,
-              UOM
-          FROM stnapp.FactItemAttributeManu
-          WHERE IsActive = 1
-          ORDER BY ItemCode;
-        `;
-
-        whsQuery = `
-          SELECT
-              WhsCode,
-              WhsName,
-              Branch,
-              Location,
-              WhsType
-          FROM stnapp.FactWhsAttributeManu
-          WHERE IsActive = 1
-          ORDER BY WhsCode;
-        `;
-      }
-
-      const itemResult = await pool.request().query(itemQuery);
-      const whsResult = await pool.request().query(whsQuery);
+      const warehouseLists = await getWarehouseLists(
+        pool,
+        sessionUser.UserID,
+        area,
+        stnType
+      );
 
       return {
         status: 200,
         jsonBody: {
           success: true,
           area,
+          stnType: stnType || null,
           items: itemResult.recordset,
-          warehouses: whsResult.recordset
+          warehouses: warehouseLists.fromWarehouses,
+          fromWarehouses: warehouseLists.fromWarehouses,
+          toWarehouses: warehouseLists.toWarehouses
         }
       };
     } catch (error) {

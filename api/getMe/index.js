@@ -13,11 +13,11 @@ app.http("getMe", {
       if (!sessionId) {
         return {
           status: 401,
-           headers: {
-              "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
-              "Pragma": "no-cache",
-              "Expires": "0"
-            },
+          headers: {
+            "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0"
+          },
           jsonBody: {
             authenticated: false
           }
@@ -42,6 +42,7 @@ app.http("getMe", {
               u.IsAllowedManufacturing,
               u.IsAllowedDistribution,
               u.IsManager,
+              u.IsSuperUser,
               u.IsActive,
               u.IsDeleted
           FROM STNAPP.UserSession s
@@ -53,11 +54,11 @@ app.http("getMe", {
       if (result.recordset.length === 0) {
         return {
           status: 401,
-           headers: {
-              "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
-              "Pragma": "no-cache",
-              "Expires": "0"
-            },
+          headers: {
+            "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0"
+          },
           jsonBody: {
             authenticated: false
           }
@@ -74,11 +75,11 @@ app.http("getMe", {
       ) {
         return {
           status: 401,
-           headers: {
-    "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
-    "Pragma": "no-cache",
-    "Expires": "0"
-  },
+          headers: {
+            "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0"
+          },
           jsonBody: {
             authenticated: false
           }
@@ -95,11 +96,11 @@ app.http("getMe", {
 
       return {
         status: 200,
-         headers: {
-    "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
-    "Pragma": "no-cache",
-    "Expires": "0"
-                  },
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+          "Pragma": "no-cache",
+          "Expires": "0"
+        },
         jsonBody: {
           authenticated: true,
           userId: row.UserID,
@@ -115,6 +116,7 @@ app.http("getMe", {
             IsAllowedManufacturing: row.IsAllowedManufacturing,
             IsAllowedDistribution: row.IsAllowedDistribution,
             IsManager: row.IsManager,
+            IsSuperUser: row.IsSuperUser,
             IsActive: row.IsActive
           }
         }
@@ -124,11 +126,11 @@ app.http("getMe", {
 
       return {
         status: 500,
-         headers: {
-    "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
-    "Pragma": "no-cache",
-    "Expires": "0"
-  },
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+          "Pragma": "no-cache",
+          "Expires": "0"
+        },
         jsonBody: {
           authenticated: false,
           message: "Internal server error."

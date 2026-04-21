@@ -42,16 +42,20 @@
             <div class="label">Selected Area</div>
             <div class="value" id="selectedArea">None</div>
           </div>
+          <div class="summary-item">
+            <div class="label">System Level</div>
+            <div class="value" id="systemLevel">Standard User</div>
+          </div>
         </div>
       </div>
 
       <div class="dashboard-grid">
         <div class="card soft workspace-card">
           <div class="workspace-kicker">Divisions</div>
-            <div class="section-title">Business Area</div>
+          <div class="section-title">Business Area</div>
           <div class="workspace-text">
-    Choose the active area before starting a workflow.
-  </div>
+            Choose the active area before starting a workflow.
+          </div>
           <div class="top-actions" id="businessAreaButtons"></div>
         </div>
 
@@ -102,6 +106,20 @@
           </div>
           <div class="top-actions">
             <button id="reconcileStockBtn">Reconcile Stock</button>
+          </div>
+        </div>
+
+        <div id="superUserBlock" class="card soft workspace-card" style="display:none;">
+          <div class="workspace-kicker">Administration</div>
+          <div class="section-title">System Access</div>
+          <div class="workspace-text">
+            Add users, manage user access, maintain warehouse setup, and control operational permissions across the app.
+          </div>
+          <div class="top-actions">
+            <button id="addUserBtn">Add User</button>
+            <button id="manageUserBtn" class="success">Manage User</button>
+            <button id="addWarehouseBtn">Add Warehouse</button>
+            <button id="manageWarehouseBtn" class="success">Manage Warehouse</button>
           </div>
         </div>
 

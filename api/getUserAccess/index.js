@@ -37,6 +37,7 @@ app.http("getUserAccess", {
               u.IsAllowedManufacturing,
               u.IsAllowedDistribution,
               u.IsManager,
+              u.IsSuperUser,
               u.IsActive,
               u.IsDeleted
           FROM STNAPP.UserSession s
@@ -93,6 +94,7 @@ app.http("getUserAccess", {
             IsAllowedManufacturing: row.IsAllowedManufacturing,
             IsAllowedDistribution: row.IsAllowedDistribution,
             IsManager: row.IsManager,
+            IsSuperUser: row.IsSuperUser,
             IsActive: row.IsActive
           }
         }

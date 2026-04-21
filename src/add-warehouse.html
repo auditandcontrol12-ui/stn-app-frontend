@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Add Warehouse</title>
+  <link rel="stylesheet" href="/css/app.css" />
+</head>
+<body>
+  <div class="container">
+    <div class="top-hero">
+      <div>
+        <span class="hero-badge">System Setup</span>
+        <h1>Add Warehouse</h1>
+        <div class="page-subtitle">
+          Create a warehouse in the central warehouse master.
+        </div>
+      </div>
+    </div>
+
+    <div class="page-shell">
+      <div class="card">
+        <div class="section-title">Warehouse Details</div>
+
+        <div class="form-grid">
+          <div class="field-block">
+            <label for="businessArea">Business Area</label>
+            <select id="businessArea">
+              <option value="">-- Select Area --</option>
+              <option value="Manufacturing">Manufacturing</option>
+              <option value="Distribution">Distribution</option>
+            </select>
+          </div>
+
+          <div class="field-block">
+            <label for="warehouseCode">Warehouse Code</label>
+            <input id="warehouseCode" type="text" />
+          </div>
+
+          <div class="field-block">
+            <label for="warehouseName">Warehouse Name</label>
+            <input id="warehouseName" type="text" />
+          </div>
+
+          <div class="field-block">
+            <label><input id="isActive" type="checkbox" checked /> Is Active</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="card soft">
+        <div class="action-row">
+          <button id="createWarehouseBtn" class="success">Create Warehouse</button>
+          <button id="backDashboardBtn" class="secondary">Back to Dashboard</button>
+        </div>
+      </div>
+
+      <div id="pageLoader" class="page-loader" aria-hidden="true">
+        <div class="page-loader-card">
+          <div class="page-loader-spinner"></div>
+          <div id="pageLoaderText" class="page-loader-text">Working...</div>
+        </div>
+      </div>
+
+      <!-- <div class="card output-card">
+        <pre id="output">Waiting...</pre>
+      </div> -->
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script src="/js/add-warehouse.js"></script>
+</body>
+</html>

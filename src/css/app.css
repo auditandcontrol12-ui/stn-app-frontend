@@ -2050,3 +2050,25 @@ td .row-actions {
     width: 100%;
   }
 }
+/* Signed document upload flow */
+.signed-upload-flow {
+  align-items: center;
+  gap: 14px;
+}
+
+.upload-flow-separator {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .signed-upload-flow {
+    align-items: stretch;
+  }
+
+  .upload-flow-separator {
+    text-align: center;
+  }
+}

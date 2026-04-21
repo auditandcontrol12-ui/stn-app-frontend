@@ -8,7 +8,8 @@ const output = document.getElementById("output");
 const linesContainer = document.getElementById("linesContainer");
 
 let items = [];
-let warehouses = [];
+let fromWarehouses = [];
+let toWarehouses = [];
 let lineCounter = 0;
 
 function log(msg, obj = null) {
@@ -123,7 +124,7 @@ function fillHeaderInfo() {
   setEntryStatus(existingDraft?.status || (stnIdFromUrl ? "Draft" : "Unsaved"));
 }
 
-function buildWarehouseOptions(selectEl) {
+function buildWarehouseOptions(selectEl, warehouseList) {
   if (!selectEl) return;
 
   selectEl.innerHTML = "";
@@ -133,7 +134,7 @@ function buildWarehouseOptions(selectEl) {
   defaultOpt.textContent = "-- Select Warehouse --";
   selectEl.appendChild(defaultOpt);
 
-  warehouses.forEach((w) => {
+  (warehouseList || []).forEach((w) => {
     const opt = document.createElement("option");
     opt.value = w.WhsCode;
     opt.textContent = `${w.WhsCode} - ${w.WhsName}`;
@@ -427,9 +428,16 @@ function loadLookups() {
         return;
       }
 
-      log(`Loading lookups for ${businessArea}...`);
+      if (!txnType) {
+        log("STN type missing in URL.");
+        return;
+      }
 
-      const res = await fetch(`/api/getLookups?area=${encodeURIComponent(businessArea)}`, {
+      log(`Loading lookups for ${businessArea} / ${txnType}...`);
+
+      const lookupUrl = `/api/getLookups?area=${encodeURIComponent(businessArea)}&stnType=${encodeURIComponent(txnType)}`;
+
+      const res = await fetch(lookupUrl, {
         credentials: "include"
       });
       const text = await res.text();
@@ -448,11 +456,12 @@ function loadLookups() {
       }
 
       items = data.items || [];
-      warehouses = data.warehouses || [];
+      fromWarehouses = data.fromWarehouses || data.warehouses || [];
+      toWarehouses = data.toWarehouses || data.warehouses || [];
 
       buildItemDatalist();
-      buildWarehouseOptions(document.getElementById("warehouseFrom"));
-      buildWarehouseOptions(document.getElementById("warehouseTo"));
+      buildWarehouseOptions(document.getElementById("warehouseFrom"), fromWarehouses);
+      buildWarehouseOptions(document.getElementById("warehouseTo"), toWarehouses);
 
       let draftToRestore = null;
       let restored = false;
@@ -462,8 +471,10 @@ function loadLookups() {
         log("Lookups loaded successfully.", {
           success: true,
           itemCount: items.length,
-          warehouseCount: warehouses.length,
+          fromWarehouseCount: fromWarehouses.length,
+          toWarehouseCount: toWarehouses.length,
           area: businessArea,
+          stnType: txnType,
           restoredDraft: false,
           mode: pageMode
         });
@@ -494,8 +505,10 @@ function loadLookups() {
       log("Lookups loaded successfully.", {
         success: true,
         itemCount: items.length,
-        warehouseCount: warehouses.length,
+        fromWarehouseCount: fromWarehouses.length,
+        toWarehouseCount: toWarehouses.length,
         area: businessArea,
+        stnType: txnType,
         restoredDraft: restored,
         stnIdFromUrl: stnIdFromUrl || null,
         mode: pageMode || "default"
